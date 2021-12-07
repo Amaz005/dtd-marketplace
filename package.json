@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "heroku-postbuild": "yarn build"
+    "heroku-postbuild": "yarn run build"
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
