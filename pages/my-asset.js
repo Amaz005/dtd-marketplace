@@ -1,14 +1,15 @@
-import {ethers} from 'ethers'
-import {useState, useEffect} from 'react'
-import axios from 'axios'
+import {ethers} from "ethers"
+import {useState, useEffect} from "react"
+import axios from "axios"
 import {
     nftAddress, nftMarketAddress
-} from '../config'
-import NFT from '../artifacts/contracts/NFT.sol/NFT.json'
-import Market from '../artifacts/contracts/NFTMarket.sol/NFTMarket.json'
-import Web3Modal from 'web3modal'
-import Image from 'next/image'
-export default function myAsset() {
+} from "../config"
+import NFT from "../artifacts/contracts/NFT.sol/NFT.json"
+import Market from "../artifacts/contracts/NFTMarket.sol/NFTMarket.json"
+import Web3Modal from "web3modal"
+import Image from "next/image"
+
+export default function MyAsset() {
     let window;
    // @dev declare variable that will contain nft asset data
     const [nfts, setNfts] = useState([])
@@ -21,14 +22,14 @@ export default function myAsset() {
 
     useEffect(() => {
         if(provider) {
-            provider.on('accountsChanged',handleAccountsChanged)
+            provider.on("accountsChanged",handleAccountsChanged)
         }
 
     }, [provider])
 
     const handleAccountsChanged = (accounts) => {
         loadNFTs()
-        console.log('accountsChanged', accounts)
+        console.log("accountsChanged", accounts)
     }
 
 
@@ -48,7 +49,7 @@ export default function myAsset() {
         const items = await Promise.all(data[0].map(async i => {
             const tokenUri = await tokenContract.tokenURI(i.tokenId)
             const meta = await axios.get(tokenUri)
-            let price = ethers.utils.formatUnits(i.price.toString(), 'ether')
+            let price = ethers.utils.formatUnits(i.price.toString(), "ether")
             console.log("price: ",price)
             let item = {
                 price,
@@ -78,7 +79,7 @@ export default function myAsset() {
                 {
                     nfts.map((nft, i) => (
                     <div key={i} className="border shadow rounded-xl overflow-hidden">
-                        <Image width={100} height={52} layout="responsive" src={nft.image} />
+                        <Image alt="Picture of the author" width={100} height={52} layout="responsive" src={nft.image} />
                         <div className="p-4 bg-black">
                         <p className="text-2xl font-bold text-white">Price - {nft.price} Eth</p>
                         </div>
