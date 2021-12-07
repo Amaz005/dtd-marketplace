@@ -5,7 +5,7 @@ const Navbar = () => {
     return (
         <nav className="flex items-center justify-between flex-wrap bg-gray-900 p-4">
             <div className="flex items-center flex-shrink-0 text-white mr-6">
-                <Image src={logo.src} height={25} width={25}/>
+                <Image alt="" src={logo.src} height={25} width={25}/>
                 <span className="ml-3"/>
                 <span className="font-semibold text-xl font-bold tracking-tight">DTD marketplace</span>
             </div>

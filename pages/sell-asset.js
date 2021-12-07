@@ -78,7 +78,7 @@ export default function SellAsset() {
 
     if (loadingState && !nfts.length) {
         return (
-        <h1 className="px-20 py-10 text-3xl">You didn't create any asset yet</h1>
+        <h1 className="px-20 py-10 text-3xl">You didn&apos;t create any asset yet</h1>
         )
     }  
 
