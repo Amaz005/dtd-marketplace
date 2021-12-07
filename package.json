@@ -2,12 +2,15 @@
   "name": "nft-marketplace",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "yarn": "1.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "heroku-postbuild": "npm run build"
+    "heroku-postbuild": "yarn build"
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
