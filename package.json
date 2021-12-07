@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "hardhat-compile": "npx hardhat compile",
     "heroku-postbuild": "yarn run build"
   },
   "dependencies": {
