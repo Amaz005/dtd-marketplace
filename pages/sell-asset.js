@@ -8,6 +8,7 @@ import NFT from "../artifacts/contracts/NFT.sol/NFT.json"
 import Market from "../artifacts/contracts/NFTMarket.sol/NFTMarket.json"
 import Web3Modal from "web3modal"
 import Image from "next/image"
+
 export default function SellAsset() {
    // @dev declare variable that will contain nft asset data
     const [nfts, setNfts] = useState([])
@@ -89,7 +90,7 @@ export default function SellAsset() {
                 {
                     nfts.map((nft, i) => (
                     <div key={i} className="border shadow rounded-xl overflow-hidden">
-                        <Image alt="Picture of the author" width={100} height={52} layout="responsive" src={nft.image} />
+                        <Image alt="" width={100} height={52} layout="responsive" src={nft.image} />
                         <div className="p-4 bg-black">
                         <p className="text-2xl font-bold text-white">Price - {nft.price} Eth</p>
                         </div>
