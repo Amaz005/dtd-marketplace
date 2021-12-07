@@ -10,4 +10,7 @@ module.exports = {
     secret: process.env.secret
   },
   reactStrictMode: true,
+  images: {
+    domains: ['ipfs.infura.io'],
+  },
 }

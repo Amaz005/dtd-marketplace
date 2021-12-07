@@ -7,7 +7,7 @@ import {
 import NFT from '../artifacts/contracts/NFT.sol/NFT.json'
 import Market from '../artifacts/contracts/NFTMarket.sol/NFTMarket.json'
 import Web3Modal from 'web3modal'
-
+import Image from 'next/image'
 export default function myAsset() {
     let window;
    // @dev declare variable that will contain nft asset data
@@ -23,6 +23,7 @@ export default function myAsset() {
         if(provider) {
             provider.on('accountsChanged',handleAccountsChanged)
         }
+
     }, [provider])
 
     const handleAccountsChanged = (accounts) => {
@@ -39,8 +40,9 @@ export default function myAsset() {
         const provider = new ethers.providers.Web3Provider(connection)
         const signer = provider.getSigner()
         console.log("sender", signer.getAddress())
-        const tokenContract = new ethers.Contract(nftAddress, NFT.abi, signer)
+        const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
         const marketContract = new ethers.Contract(nftMarketAddress, Market.abi, signer)
+        setProvider(connection)
         const data = await marketContract.getUserItems()
         console.log("pass1", data)
         const items = await Promise.all(data[0].map(async i => {
@@ -70,13 +72,13 @@ export default function myAsset() {
     }  
 
     return (
-        <div className="flex justify-center">
+        <div>
             <div className="p-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
                 {
                     nfts.map((nft, i) => (
                     <div key={i} className="border shadow rounded-xl overflow-hidden">
-                        <img src={nft.image} className="rounded" />
+                        <Image width={100} height={52} layout="responsive" src={nft.image} />
                         <div className="p-4 bg-black">
                         <p className="text-2xl font-bold text-white">Price - {nft.price} Eth</p>
                         </div>

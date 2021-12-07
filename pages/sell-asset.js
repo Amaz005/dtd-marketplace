@@ -7,7 +7,7 @@ import {
 import NFT from '../artifacts/contracts/NFT.sol/NFT.json'
 import Market from '../artifacts/contracts/NFTMarket.sol/NFTMarket.json'
 import Web3Modal from 'web3modal'
-
+import Image from 'next/image'
 export default function sellAsset() {
    // @dev declare variable that will contain nft asset data
     const [nfts, setNfts] = useState([])
@@ -45,7 +45,7 @@ export default function sellAsset() {
         // if(provider) {
         //     provider.on('accountsChanged',handleAccountsChanged)
         // }    
-        const tokenContract = new ethers.Contract(nftAddress, NFT.abi, signer)
+        const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
         const marketContract = new ethers.Contract(nftMarketAddress, Market.abi, signer)
         getData(marketContract, tokenContract); 
     }
@@ -57,17 +57,19 @@ export default function sellAsset() {
             const tokenURI = await tokenContract.tokenURI(i.tokenId)
             const meta = await axios.get(tokenURI)
             let price = ethers.utils.formatUnits(i.price.toString(), 'ether')
+            console.log('sold', i.isSold)
             let items = {
                 price,
                 tokenId: i.tokenId.toNumber(),
                 seller: i.seller,
                 owner: i.owner,
-                sold: i.sold,
+                sold: i.isSold,
                 image: meta.data.image,
             }
             return items
         }))
         const soldItems = items.filter(i => i.sold)
+        console.log("soldItems: " + soldItems);
         setSold(soldItems)
         setNfts(items)
         setLoadingState(true)
@@ -87,7 +89,7 @@ export default function sellAsset() {
                 {
                     nfts.map((nft, i) => (
                     <div key={i} className="border shadow rounded-xl overflow-hidden">
-                        <img src={nft.image} className="rounded" />
+                        <Image width={100} height={52} layout="responsive" src={nft.image} />
                         <div className="p-4 bg-black">
                         <p className="text-2xl font-bold text-white">Price - {nft.price} Eth</p>
                         </div>
@@ -98,6 +100,7 @@ export default function sellAsset() {
             </div>
             <div className="px-4">
                 {
+                    
                     Boolean(sold.length) && (
                     <div>
                         <h2 className="text-2xl py-2">Items sold</h2>
@@ -105,7 +108,7 @@ export default function sellAsset() {
                             {
                             sold.map((nft, i) => (
                                 <div key={i} className="border shadow rounded-xl overflow-hidden">
-                                <img src={nft.image} className="rounded" />
+                                <Image width={100} height={52} layout="responsive" src={nft.image} />
                                 <div className="p-4 bg-black">
                                     <p className="text-2xl font-bold text-white">Price - {nft.price} Eth</p>
                                 </div>
