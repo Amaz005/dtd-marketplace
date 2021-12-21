@@ -41,12 +41,12 @@ contract Swap is Ownable {
         emit TokensPurchased(msg.sender, address(token), tokenAmount, rate);
     }
 
-    function sellToken(uint256 amount) public payable{
-        require(amount > 0, "You need to sell at least some tokens");
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        require(allowance >= amount, "Check the token allowance");
-        token.transferFrom(msg.sender, address(this), amount);
-        emit TokenSell(msg.sender, address(token), amount, rate);
-    }
+    // function sellToken(uint256 amount) public payable{
+    //     require(amount > 0, "You need to sell at least some tokens");
+    //     uint256 allowance = token.allowance(msg.sender, address(this));
+    //     require(allowance >= amount, "Check the token allowance");
+    //     token.transferFrom(msg.sender, address(this), amount);
+    //     emit TokenSell(msg.sender, address(token), amount, rate);
+    // }
 
 }
