@@ -1,26 +1,42 @@
-const {ethers} = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 const fs = require('fs');
+const { BigNumber } = require("ethers");
 
 async function main() {
+  //deploy
   const NFTMarket = await ethers.getContractFactory("NFTMarket");
-  const nftMarket = await NFTMarket.deploy();
+  const nftMarket = await upgrades.deployProxy(NFTMarket);
   await nftMarket.deployed();
   console.log("nftMarket deployed to:", nftMarket.address);
 
-  const NFT = await ethers.getContractFactory("NFT");
-  const nft = await NFT.deploy(nftMarket.address);
-  await nft.deployed();
-  console.log("nft deployed to:", nft.address);
+  const NFT = await ethers.getContractFactory("NFT")
+  const nft = await upgrades.deployProxy(NFT, [nftMarket.address])
+  await nft.deployed()
+  console.log("nft deployed to:", nft.address)
+
+  const DToken = await ethers.getContractFactory("DToken")
+  const dtoken = await DToken.deploy("1000000000000")
+  await dtoken.deployed()
+
+  const Swap = await ethers.getContractFactory('Swap')
+  const swap = await Swap.deploy(dtoken.address)
+  await swap.deployed()
+
+  await dtoken.transfer(swap.address, '1000000000000')
+
+  console.log("tokenAddress: " ,dtoken.address)
+  console.log("walletAddress: " ,swap.address)
 
   let config = `
-  export const nftMarketAddress = "${nftMarket.address}"
-  export const nftAddress = "${nft.address}"
+    export const nftMarketAddress = "${nftMarket.address}"
+    export const nftAddress = "${nft.address}"
+    export const tokenAddress = "${dtoken.address}"
+    export const walletAddress = "${swap.address}"
   `
-
   let data = JSON.stringify(config)
   fs.writeFileSync('config.js', JSON.parse(data))
-
 }
+
 
 main()
   .then(() => process.exit(0))

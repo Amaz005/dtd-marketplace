@@ -8,7 +8,8 @@ import NFT from "../artifacts/contracts/NFT.sol/NFT.json"
 import Market from "../artifacts/contracts/NFTMarket.sol/NFTMarket.json"
 import Web3Modal from "web3modal"
 import Image from "next/image"
-
+import Loading from '../components/LoadingScreen'
+import ConnectScreen from '../components/ConnectScreen'
 export default function MyAsset() {
     let window;
    // @dev declare variable that will contain nft asset data
@@ -23,6 +24,8 @@ export default function MyAsset() {
     useEffect(() => {
         if(provider) {
             provider.on("accountsChanged",handleAccountsChanged)
+            provider.on('connect', handleConnect)
+            provider.on('disconnect', handleDisconnect)
         }
 
     }, [provider])
@@ -32,19 +35,37 @@ export default function MyAsset() {
         console.log("accountsChanged", accounts)
     }
 
+    const handleConnect = (info) => {
+        console.log("connectInfo: ", info)
+    }
+
+    const handleDisconnect = () => {
+        console.log()
+    }
+
 
     // @dev load provider, connect to contract and get asset data
     const loadNFTs = async () =>{
         console.log("loadNFTs")
         const web3Modal = new Web3Modal()
         const connection = await web3Modal.connect()
+        console.log(connection)
+        if(!connection.isConnected) {
+            return (
+                <div>
+                    <ConnectScreen />
+                </div>
+            )
+        }
         const provider = new ethers.providers.Web3Provider(connection)
         const signer = provider.getSigner()
         console.log("sender", signer.getAddress())
         const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
         const marketContract = new ethers.Contract(nftMarketAddress, Market.abi, signer)
         setProvider(connection)
+        setLoadingState(true) 
         const data = await marketContract.getUserItems()
+        setLoadingState(false) 
         console.log("pass1", data)
         const items = await Promise.all(data[0].map(async i => {
             const tokenUri = await tokenContract.tokenURI(i.tokenId)
@@ -62,15 +83,18 @@ export default function MyAsset() {
         }))
         console.log(items[0])
         setNfts(items)
-        setLoadingState(true) 
         console.log("nfts",nfts)
     }
 
     if (loadingState && !nfts.length) {
         return (
-        <h1 className="px-20 py-10 text-3xl">You didn&apos;t buy any asset yet</h1>
+            <Loading loading={loadingState} />
         )
-    }  
+    } else if (!loadingState && !nfts.length) {
+        return (
+            <div className="flex item-center justify-center font-bold w-full">There is nothing to load</div>
+        )
+    }
 
     return (
         <div>

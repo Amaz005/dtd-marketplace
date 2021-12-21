@@ -1,20 +1,23 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./Swap.sol";
 
-contract NFTMarket is ReentrancyGuard {
-    using Counters for Counters.Counter;
-    Counters.Counter private _itemIds;
-    Counters.Counter private _itemsSold;
+contract NFTMarket is ReentrancyGuardUpgradeable {
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+    CountersUpgradeable.Counter private _itemIds;
+    CountersUpgradeable.Counter private _itemsSold;
 
     address payable owner;
-    uint listingPrice = 0.025 ether;
+    uint listingPrice;
 
-    constructor() {
+    function initialize() initializer public{
         owner = payable(msg.sender);
+        listingPrice = 0.025 ether;
     }
 
     struct MarketItem {
@@ -25,6 +28,7 @@ contract NFTMarket is ReentrancyGuard {
         address payable owner;
         uint price;
         bool isSold;
+        bool isPublished;
     }
 
     mapping (uint => MarketItem) private idToMarketItem;
@@ -36,7 +40,8 @@ contract NFTMarket is ReentrancyGuard {
         address seller,
         address owner,
         uint price,
-        bool isSold
+        bool isSold,
+        bool isPublished
     );
 
     function getListingPrice() public view returns(uint256) {
@@ -61,10 +66,11 @@ contract NFTMarket is ReentrancyGuard {
             payable(msg.sender),
             payable(address(0)),
             price,
+            false,
             false
         );
 
-        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+        IERC721Upgradeable(nftContract).transferFrom(msg.sender, address(this), tokenId);
 
         emit MarketItemCreate(
             itemId,
@@ -73,22 +79,30 @@ contract NFTMarket is ReentrancyGuard {
             payable(msg.sender),
             payable(address(0)),
             price,
+            false,
             false
         );
     }
 
+    function publicItem(uint256 id) public returns(bool){
+        idToMarketItem[id].isPublished = true;
+        return true;
+    }
+
     function saleMarketItem(
         address nftContract,
-        uint itemId
+        address tokenContract,
+        uint itemId,
+        uint amount
     ) public payable nonReentrant {
         uint price = idToMarketItem[itemId].price;
         uint tokenId = idToMarketItem[itemId].tokenId;
-        require(msg.value == price, "Pls submit the asking price for the item");
-
+        require(amount == price, "Pls submit the asking price for the item");
         // @dev value from seller to receiver
         idToMarketItem[itemId].seller.transfer(msg.value);
         // @dev token from receiver to buyer
-        IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
+        IERC721Upgradeable(nftContract).transferFrom(address(this), msg.sender, tokenId);
+        IERC20(tokenContract).transferFrom(msg.sender, idToMarketItem[itemId].seller, amount);
         // @dev set owner equal to msg.sender
         idToMarketItem[itemId].owner = payable(msg.sender);
         idToMarketItem[itemId].isSold = true;
@@ -104,8 +118,7 @@ contract NFTMarket is ReentrancyGuard {
         MarketItem[] memory items = new MarketItem[](unsoldItemCount);
         // @dev get all items that are unsold
         for (uint i = 0; i< itemCount; i++) {
-            if(idToMarketItem[i+1].owner == address(0)) {
-                // @question why we need to declare currentItem, just add items[currentIndex] = idToMarketItem[currentId]
+            if(idToMarketItem[i+1].owner == address(0) && idToMarketItem[i+1].seller != msg.sender) {
                 items[currentIndex] = idToMarketItem[i+1];
                 currentIndex += 1;
             }

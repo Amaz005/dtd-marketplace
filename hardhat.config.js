@@ -1,7 +1,9 @@
-require("@nomiclabs/hardhat-waffle");
-const fs = require('fs');
-const privateKey = fs.readFileSync(".secret").toString().trim() || "01234567890123456789";
-const infuraId = fs.readFileSync(".infuraid").toString().trim() || "";
+require("@nomiclabs/hardhat-waffle")
+require('@openzeppelin/hardhat-upgrades')
+const fs = require('fs')
+const privateKey = fs.readFileSync(".secret").toString().trim() || "01234567890123456789"
+const infuraId = fs.readFileSync(".infuraid").toString().trim() || ""
+
 
 module.exports = {
   defaultNetwork: "hardhat",

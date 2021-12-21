@@ -8,6 +8,7 @@ import NFT from "../artifacts/contracts/NFT.sol/NFT.json"
 import Market from "../artifacts/contracts/NFTMarket.sol/NFTMarket.json"
 import Web3Modal from "web3modal"
 import Image from "next/image"
+import Loading from '../components/LoadingScreen'
 
 export default function SellAsset() {
    // @dev declare variable that will contain nft asset data
@@ -78,7 +79,7 @@ export default function SellAsset() {
 
     if (loadingState && !nfts.length) {
         return (
-        <h1 className="px-20 py-10 text-3xl">You didn&apos;t create any asset yet</h1>
+            <Loading loading={loadingState} />
         )
     }  
 

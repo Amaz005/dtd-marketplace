@@ -1,8 +1,10 @@
 import '../styles/globals.css'
+import '../styles/styles.css'
 import Navbar from '../components/Navbar.js'
 import Head from 'next/head';
+
 function MyApp({ Component, pageProps }) {
-  console.log(__dirname);
+  
   return (
     <div>
       <Head>
