@@ -1,18 +1,26 @@
 const { ethers, upgrades } = require("hardhat");
+const hre = require("hardhat")
 const fs = require('fs');
 const { BigNumber } = require("ethers");
+require('@nomiclabs/hardhat-etherscan')
 
 async function main() {
   //deploy
+
+  const accounts = await hre.ethers.getSigners();
+  console.log("account 0: ", accounts[0].address)
+  
   const NFTMarket = await ethers.getContractFactory("NFTMarket");
   const nftMarket = await upgrades.deployProxy(NFTMarket);
   await nftMarket.deployed();
   console.log("nftMarket deployed to:", nftMarket.address);
+  console.log("implementation address:", await hre.upgrades.erc1967.getImplementationAddress(nftMarket.address));
 
   const NFT = await ethers.getContractFactory("NFT")
   const nft = await upgrades.deployProxy(NFT, [nftMarket.address])
   await nft.deployed()
   console.log("nft deployed to:", nft.address)
+  console.log("implementation address:", await hre.upgrades.erc1967.getImplementationAddress(nft.address));
 
   const DToken = await ethers.getContractFactory("DToken")
   const dtoken = await DToken.deploy("1000000000000")

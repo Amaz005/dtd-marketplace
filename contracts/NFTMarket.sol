@@ -5,18 +5,19 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./Swap.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract NFTMarket is ReentrancyGuardUpgradeable {
+contract NFTMarket is ReentrancyGuardUpgradeable,OwnableUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _itemIds;
     CountersUpgradeable.Counter private _itemsSold;
 
-    address payable owner;
-    uint listingPrice;
+    address payable feeWallet;
+    uint public listingPrice;
 
     function initialize() initializer public{
-        owner = payable(msg.sender);
+        __Ownable_init();
+        feeWallet = payable(msg.sender);
         listingPrice = 0.025 ether;
     }
 
@@ -44,8 +45,23 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
         bool isPublished
     );
 
+    event SaleMarketItem(
+        uint indexed itemId,
+        address indexed nftContract,
+        uint indexed tokenId,
+        address seller,
+        address owner,
+        uint price,
+        bool isSold,
+        bool isPublished
+    );
+
     function getListingPrice() public view returns(uint256) {
         return listingPrice;
+    }
+
+    function setListingPrice(uint256 _listingPrice) public onlyOwner {
+        listingPrice = _listingPrice;
     }
 
     function createMarketItem(
@@ -67,7 +83,7 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
             payable(address(0)),
             price,
             false,
-            false
+            true
         );
 
         IERC721Upgradeable(nftContract).transferFrom(msg.sender, address(this), tokenId);
@@ -80,13 +96,16 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
             payable(address(0)),
             price,
             false,
-            false
+            true
         );
     }
 
-    function publicItem(uint256 id) public returns(bool){
-        idToMarketItem[id].isPublished = true;
-        return true;
+    function checkExisting(uint256 itemId) public view returns(bool) {
+        if(idToMarketItem[itemId].itemId != uint256(0x0)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     function saleMarketItem(
@@ -108,7 +127,7 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
         idToMarketItem[itemId].isSold = true;
         _itemsSold.increment();
         // @dev 
-        payable(owner).transfer(listingPrice);
+        payable(feeWallet).transfer(listingPrice);
     }
 
     function getAllUnsoldItems() public view returns(MarketItem[] memory) {
@@ -126,7 +145,7 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
         return items;
     }
 
-    function getUserItems() public view returns(MarketItem[] memory, address) {
+    function getUserItems() public view returns(MarketItem[] memory) {
         uint totalItemCount = _itemIds.current();
         uint itemCount = 0;
         uint currentIndex = 0;
@@ -144,10 +163,10 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
                 currentIndex += 1;
             }
         }
-        return (items,tx.origin);
+        return (items);
     }
 
-    function getUserCreateItems() public view returns(MarketItem[] memory, address) {
+    function getUserCreateItems() public view returns(MarketItem[] memory) {
         uint totalItemCount = _itemIds.current();
         uint itemCount = 0;
         uint currentIndex = 0;
@@ -165,6 +184,7 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
                 currentIndex += 1;
             }
         }
-        return (items, tx.origin);
+        return (items);
     }
+
 }

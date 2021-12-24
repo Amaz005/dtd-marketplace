@@ -1,6 +1,6 @@
 
-    export const nftMarketAddress = "0x95401dc811bb5740090279Ba06cfA8fcF6113778"
-    export const nftAddress = "0x998abeb3E57409262aE5b751f60747921B33613E"
-    export const tokenAddress = "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49"
-    export const walletAddress = "0x4826533B4897376654Bb4d4AD88B7faFD0C98528"
+    export const nftMarketAddress = "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+    export const nftAddress = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+    export const tokenAddress = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+    export const walletAddress = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
   

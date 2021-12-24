@@ -24,4 +24,8 @@ contract NFT is ERC721URIStorageUpgradeable {
         setApprovalForAll(contractAddress, true);
         return newItemId;
     }
+
+    function getTotalSupply() public view returns(uint) {
+        return _tokenIds.current();
+    }
 }

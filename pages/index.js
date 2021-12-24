@@ -4,7 +4,7 @@ import axios from 'axios'
 import Web3Modal from 'web3modal'
 import {
   nftAddress, nftMarketAddress,
-  tokenAddress, SwapAddress
+  tokenAddress
 } from '../config'
 import NFT from '../artifacts/contracts/NFT.sol/NFT.json'
 import DToken from '../artifacts/contracts/DToken.sol/DToken.json'
@@ -13,19 +13,42 @@ import Image from "next/image"
 import Loading from '../components/LoadingScreen'
 import ConnectScreen from '../components/ConnectScreen'
 import noImage from '../public/no-image.jpg'
+import Navbar from '../components/Navbar.jsx'
 export default function Home() {
   // @dev declare variable that will contain nft asset data
   const [nfts, setNfts] = useState([])
   const [symbol, setSymbol] = useState("")
   const [loadingState, setLoadingState] = useState(false)
-  
+  const [loadToken, setLoadToken] = useState(false)
+  const [connection, setConnection] = useState()
+
   useEffect(() => {
     loadNFTs()
   }, [])
 
+  useEffect(() => {
+    if(connection) {
+      connection.on("accountsChanged",handleAccountsChanged)
+        // provider.on('connect', handleConnect)
+        // provider.on('disconnect', handleDisconnect)
+    }
+
+  }, [connection])
+
+  const handleAccountsChanged = (accounts) => {
+    loadNFTs()
+    console.log("accountsChanged", accounts)
+  }
+
   // @dev load provider, connect to contract and get asset data
   async function loadNFTs() {
     try {
+      const web3modal = new Web3Modal()
+      const connection = await web3modal.connect()
+      const userProvider = new ethers.providers.Web3Provider(connection)
+      const userSigner = userProvider.getSigner()
+      console.log("connect: ", connection)
+      setConnection(connection)
       const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545/")
       const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
       const dTokenContract = new ethers.Contract(tokenAddress, DToken.abi, provider)
@@ -33,34 +56,50 @@ export default function Home() {
       console.log("dTokenContract: ", dTokenContract)
       setLoadingState(true)
       
-      const data = await marketContract.getAllUnsoldItems()
+      let totalSupply = await tokenContract.getTotalSupply()
+      totalSupply = ethers.utils.formatUnits(totalSupply,'wei')
+      console.log('total supply: ',totalSupply)
       const symbol = await dTokenContract.symbol.call()
-      console.log('symbol', symbol)
       setLoadingState(false)
       setSymbol(symbol)
-      const items = await Promise.all( data.map(async (i) => {
-        const tokenURI = await tokenContract.tokenURI(i.tokenId)
-        const meta = await axios.get(tokenURI)
-        let price = ethers.utils.formatUnits(i.price.toString(), 'wei')
-        if(meta.data.image === undefined) {
-          meta.data.image = noImage.src
-        }
-        console.log("itemId: ", i.itemId.toNumber())
-        let items = {
-          price,
-          itemId: i.itemId.toNumber(),
-          tokenId: i.tokenId.toNumber(),
-          seller: i.seller,
-          owner: i.owner,
-          image: meta.data.image,
-          name: meta.data.name,
-          description: meta.data.description,
-        }
-        return items
-      }))
-      setNfts(items)
+
+      const data = await marketContract.getAllUnsoldItems()
+      
+      setLoadToken(true);
+      console.log(data)
+      if(data.length > 0) {
+        const items = await Promise.all( data.map(async (i) => {
+          const tokenURI = await tokenContract.tokenURI(i.tokenId)
+          const meta = await axios.get(tokenURI)
+          if(meta.data.image === undefined) {
+            meta.data.image = noImage.src
+          }
+          let showBuyButton
+          let currentAccount = await userSigner.getAddress()
+          const price = ethers.utils.formatUnits(i.price.toString(), 'wei')
+          if (i.seller == currentAccount && !i.isPublished) {
+            showBuyButton = false
+          } else if (i.seller != currentAccount && i.isPublished){
+            showBuyButton = true
+          }
+          let items = {
+            price,
+            itemId: i.itemId,
+            tokenId: i.tokenId,
+            seller: i.seller,
+            image: meta.data.image,
+            name: meta.data.name,
+            description: meta.data.description,
+            showBuyButton: showBuyButton
+          }
+          console.log('items: ',items)
+          return items
+        }))
+        setNfts(items)
+      }
+      
     } catch (error) {
-      console.log( "you have some problem with you json rpc provider, ",error)
+      console.log( "you have some problem, ",error)
       return (
         <div>Something went wrong</div>
       )
@@ -70,8 +109,8 @@ export default function Home() {
   // @dev handle buying event from user,
   const buyNft = async (nft) => {
     console.log("buyNFT")
-    const web3modal = new Web3Modal()
-    const connection = await web3modal.connect()
+    const provider = new ethers.providers.Web3Provider(connection)
+    const signer = provider.getSigner()
     if(!connection) {
       return (
         <div>
@@ -79,31 +118,36 @@ export default function Home() {
         </div>
       )
     }
-    const provider = new ethers.providers.Web3Provider(connection)
-
-    const signer = provider.getSigner()
-    const dTokenContract = new ethers.Contract(tokenAddress, DToken.abi, signer)
     const contract = new ethers.Contract(nftMarketAddress, Market.abi, signer)
+    
     const price = ethers.utils.parseUnits(nft.price.toString(), 'wei')
     console.log("price: ", price)
-    await dTokenContract.approve(nftMarketAddress, nft.price.toString())
+    console.log("itemId: ", nft.itemId)
     const transaction = await contract.saleMarketItem(nftAddress,tokenAddress, nft.itemId, price)
     await transaction.wait()
+    nft.showBuyButton = false
     loadNFTs()
   }
 
   if (loadingState && !nfts.length) {
     return (
-      <Loading loading={loadingState} />
+      <>
+        <Navbar/>
+        <Loading loading={loadingState} />
+      </>
     )
   } else if (!loadingState && !nfts.length) {
     return (
-      <div>There is nothing to load</div>
+      <>
+        <Navbar/>
+        <div>There is nothing to load</div>
+      </>
     )
   }
 
   return (
-    
+    <>
+    <Navbar dToken={loadToken}/>
     <div className="overflow-auto">
       <div className="px-4" styles={{maxWidth: '1600px'}}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
@@ -119,7 +163,7 @@ export default function Home() {
                 </div>
                 <div className="p-4 bg-black">
                   <p className="text-2xl mb-4 font-bold text-white">{nft.price} {symbol}</p>
-                  <button className="w-full bg-gray-500 text-white font-bold py-2 px-12 rounded" onClick={() => buyNft(nft)}>Buy</button>
+                  <button className="w-full bg-gray-500 text-white font-bold py-2 px-12 rounded" style={{display: nft.showBuyButton ? 'block': 'none'}} onClick={() => buyNft(nft)}>Buy</button>
                 </div>
               </div>
             ))  
@@ -128,5 +172,6 @@ export default function Home() {
         </div>  
       </div>
     </div>
+    </>
   )
 }

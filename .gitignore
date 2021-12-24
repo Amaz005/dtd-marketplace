@@ -43,6 +43,6 @@ typechain
 
 #Hardhat files
 .openzeppelin
-.artifacts
+artifacts
 cache
 hardhat.config.js
