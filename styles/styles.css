@@ -6,3 +6,6 @@ body {
 .error-message {
     color: red
 }
+.react-datepicker-popper {
+    z-index: 11 !important;
+}

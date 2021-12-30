@@ -14,14 +14,8 @@ export default function SwapToken (){
     const [isSell, setIsSell] = useState(false)
     const alert = useAlert()
     //@dev show popup
-    const [show, setShow] = useState(false);
-    const [message, setMessage] = useState('')
     const handleShow = (message) => {
         alert.error(message)
-    }
-    const handleHide = () => {
-        console.log("handle hide from swap")
-        setShow(false)
     }
 
     // @dev buy token
@@ -34,12 +28,11 @@ export default function SwapToken (){
         const swapContract = new ethers.Contract(walletAddress, Swap.abi, signer)
         const amount = ethers.utils.parseUnits(values.amount1, 'wei')
         try {
-            let transaction = await swapContract.buyToken({value: amount})
-            let tx = await transaction.wait()
+            const transaction = await swapContract.buyToken({value: amount})
+            await transaction.wait()
+            console.log('transaction: ', transaction)
         } catch (err) {
-            if(err.code == -32603) {
-                handleShow(err.data.message)
-            }
+            handleShow(err.data.message)
         }
         
         setLoadToken(true)
@@ -54,11 +47,13 @@ export default function SwapToken (){
 
         const swapContract = new ethers.Contract(walletAddress, Swap.abi, signer)
         const amount = ethers.utils.parseUnits(values.amount3.toString(), 'wei')
-        const transaction = await swapContract.sellToken(amount, values.address)
-        const tx = await transaction.wait()
-        if(tx.code == -32603) {
-            handleShow(tx.message)
+        try {
+            const transaction = await swapContract.sellToken(amount, values.address)
+            await transaction.wait()
+        }catch (err) {
+            handleShow(err.data.message)
         }
+        
         setLoadToken(true)
     }
 
@@ -94,8 +89,7 @@ export default function SwapToken (){
     return (
         <>
         <Navbar dToken={loadToken}/>
-        
-        <Alert show={show} handleHidden={handleHide} message={message}/>
+    
         <div className='text-center mt-8'>
             <button
                 className="btn btn-light"

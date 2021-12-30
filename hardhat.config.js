@@ -1,6 +1,7 @@
 require("@nomiclabs/hardhat-waffle")
 require('@openzeppelin/hardhat-upgrades')
 require('@nomiclabs/hardhat-etherscan')
+require("@nomiclabs/hardhat-ganache");
 require('dotenv').config()
 const fs = require('fs')
 const privateKey = fs.readFileSync(".secret").toString().trim() || "01234567890123456789"

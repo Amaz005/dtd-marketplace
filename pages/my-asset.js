@@ -49,38 +49,38 @@ export default function MyAsset() {
 
     // @dev load provider, connect to contract and get asset data
     const loadNFTs = async () =>{
-            const web3modal = new Web3Modal()
-            const connection = await web3modal.connect()
-            const provider = new ethers.providers.Web3Provider(connection)
-            const signer = provider.getSigner()
-            setConnection(connection)
-            setLoadToken(true)
-            const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
-            const dTokenContract = new ethers.Contract(tokenAddress, DToken.abi, provider)
-            const marketContract = new ethers.Contract(nftMarketAddress, Market.abi, provider)
-            setLoadingState(true)
-            
-            const data = await marketContract.getUserItems()
-            const symbol = await dTokenContract.symbol.call()
-            setLoadingState(false)
-            setSymbol(symbol)
-            console.log('data: ',data)
-            console.log('signer',await signer.getAddress())
-            const items = await Promise.all(data.map(async i => {
-                const tokenUri = await tokenContract.tokenURI(i.tokenId)
-                const meta = await axios.get(tokenUri)
-                let price = ethers.utils.formatUnits(i.price.toString(), 'wei')
-                let item = {
-                    price,
-                    itemId: i.itemId.toNumber(),
-                    seller: i.seller,
-                    owner: i.owner,
-                    image: meta.data.image,
-                    name: meta.data.name,
-                    description: meta.data.description,
-                }
-                return item
-            }))
+        const web3modal = new Web3Modal()
+        const connection = await web3modal.connect()
+        const provider = new ethers.providers.Web3Provider(connection)
+        const signer = provider.getSigner()
+        setConnection(connection)
+        setLoadToken(true)
+        const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
+        const dTokenContract = new ethers.Contract(tokenAddress, DToken.abi, provider)
+        const marketContract = new ethers.Contract(nftMarketAddress, Market.abi, provider)
+        setLoadingState(true)
+        
+        const data = await marketContract.getUserItems({from: signer.getAddress()})
+        const symbol = await dTokenContract.symbol.call()
+        setLoadingState(false)
+        setSymbol(symbol)
+        console.log('data: ',data)
+        console.log('signer',await signer.getAddress())
+        const items = await Promise.all(data.map(async i => {
+            const tokenUri = await tokenContract.tokenURI(i.tokenId)
+            const meta = await axios.get(tokenUri)
+            let price = ethers.utils.formatUnits(i.price.toString(), 'wei')
+            let item = {
+                price,
+                itemId: i.itemId.toNumber(),
+                seller: i.seller,
+                owner: i.owner,
+                image: meta.data.image,
+                name: meta.data.name,
+                description: meta.data.description,
+            }
+            return item
+        }))
         setNfts(items)
         
     }
@@ -121,7 +121,6 @@ export default function MyAsset() {
                         </div>
                         <div className="p-4 bg-black">
                             <p className="text-2xl mb-4 font-bold text-white">{nft.price} {symbol}</p>
-                            <button className="w-full bg-gray-500 text-white font-bold py-2 px-12 rounded" style={{display: nft.showPublicButton ? 'block': 'none'}} onClick={() => publicNft(nft)}>Public</button>
                         </div>
                     </div>
                     ))

@@ -12,6 +12,7 @@ import Market from '../artifacts/contracts/NFTMarket.sol/NFTMarket.json'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import Navbar from '../components/Navbar.jsx'
+import { useAlert } from 'react-alert'
 
 const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
 
@@ -20,19 +21,18 @@ export default function CreateItem() {
     const [loading, setLoading] = useState(false)
     const [connection, setConnection] = useState()
     const router = useRouter()
+    const alert = useAlert()
     const formik = useFormik({
         initialValues: {assetName: '', description: '',price: 0},
         validationSchema: Yup.object({
             assetName: Yup.string()
                 .min(2, "Mininum 3 characters")
                 .max(15, "Maximum 15 characters")
-                .required("Required!"),
-            price: Yup.number()
-                .min(0.01, "Mininum 0.01 number")
-                .required("Required!")   
+                .required("Required!")  
 
         }),
         onSubmit: async (values, setSubmitings) => {
+            console.log(1)
             await createItem(values)
             setSubmitings(false)
         }
@@ -50,7 +50,6 @@ export default function CreateItem() {
 
     const onChange = async (e) => {
         const file = e.target.files[0]
-        console.log("file: ",file);
         try {
             const added = await client.add(
                 file,
@@ -59,7 +58,6 @@ export default function CreateItem() {
                 }
             )
             const url = `https://ipfs.infura.io/ipfs/${added.path}`
-            console.log(url);
             setFileURI(url);
         } catch (error) {
             console.log(error)
@@ -79,22 +77,23 @@ export default function CreateItem() {
             const url = `https://ipfs.infura.io/ipfs/${added.path}`
             createSale(url, contract)
         } catch (error) {
-            console.log(error)
+            alert.error(error)
         }
     }
 
     const createSale = async (url, contract) => {
 
+        try {
+            let transaction = await contract.createToken(url)
+            setLoading(true)
+            let tx = await transaction.wait()
+            await transaction.wait()
+            setLoading(false)
+            router.push('/sell-asset')
+        } catch (error) {
+            alert.error(error.message)
+        }
         
-        let transaction = await contract.createToken(url)
-        setLoading(true)
-        let tx = await transaction.wait()
-        setLoading(false)
-        
-        setLoading(true)
-        await transaction.wait()
-        setLoading(false)
-        router.push('/sell-asset')
     }
 
     return ( 

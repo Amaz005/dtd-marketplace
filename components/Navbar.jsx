@@ -6,6 +6,8 @@ import {tokenAddress, nftMarketAddress, walletAddress} from '../config'
 import {useEffect, useState} from 'react'
 import { ethers } from 'ethers'
 import Web3Modal from 'web3modal'
+import { useAlert } from 'react-alert'
+import Modal from '../components/Modal'
 
 const simulateSlowNetworkRequest = () =>
     new Promise(resolve => setTimeout(resolve, 500));
@@ -14,7 +16,7 @@ const simulateSlowNetworkRequest = () =>
 const Navbar = ({dToken}) => {
     const [token, setToken] = useState(0)
     const [connection, setConnection] = useState()
-
+    const alert = useAlert()
     useEffect(() => {
         let isCancelled = false;
     
@@ -40,11 +42,6 @@ const Navbar = ({dToken}) => {
         loadWeb3()
     }
 
-    // useEffect(() => {
-    //         loadWeb3()
-        
-    // }, [dToken])
-
     const handleApprove = async () => {
         const web3modal = new Web3Modal()
         const connection = await web3modal.connect()
@@ -59,17 +56,22 @@ const Navbar = ({dToken}) => {
         let transactionMarket;
         let transactionSwap;
 
-        if(allowanceMarket == 0 ){
+        if(allowanceMarket.eq(ethers.BigNumber.from(0))){
             transactionMarket = await tokenContract.approve(nftMarketAddress, dToken)
-        } else if(allowanceMarket < dToken ) {
+        } else if(allowanceMarket.lt(dToken)) {
             const incrementNumber = dToken.sub(allowanceMarket)
             transactionMarket = await tokenContract.increaseAllowance(nftMarketAddress, incrementNumber)
-        } 
-        if(allowanceSwap == 0) {
+        } else if (allowanceMarket.eq(dToken)) {
+
+            alert.info("You already have approved")
+        }
+        if(allowanceSwap.eq(ethers.BigNumber.from(0))) {
             transactionSwap = await tokenContract.approve(walletAddress, dToken)
-        } else if (allowanceSwap < dToken) {
+        } else if (allowanceSwap.lt(dToken)) {
             const incrementNumber = dToken.sub(allowanceMarket)
             transactionMarket = await tokenContract.increaseAllowance(walletAddress, incrementNumber)
+        }else if (allowanceSwap.eq(dToken)) {
+            alert.info("You already have approved")
         }
         if(transactionMarket)
             await transactionMarket.wait()
@@ -82,6 +84,9 @@ const Navbar = ({dToken}) => {
     const loadWeb3 = async () => {
         const web3modal = new Web3Modal()
         const connection = await web3modal.connect()
+        if(!connection) {
+            return
+        }
         setConnection(connection)
         const log = localStorage.getItem("WEB3_CONNECT_CACHED_PROVIDER")
         if(log == "injected") { 
@@ -134,7 +139,7 @@ const Navbar = ({dToken}) => {
                     <a href="#" className="inline-block text-sm px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-gray-800 hover:bg-white mt-4 lg:mt-0" onClick={handleApprove}>Approve</a>
                 </div>
             </div>
-            
+        
         </nav>
     )
 }

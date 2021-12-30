@@ -12,8 +12,7 @@ import Image from "next/image"
 import noImage from '../public/no-image.jpg'
 import Loading from '../components/LoadingScreen'
 import Navbar from '../components/Navbar.jsx'
-import { useFormik } from 'formik'
-import * as Yup from 'yup'
+import Modal from '../components/Modal'
 
 export default function SellAsset() {
    // @dev declare variable that will contain nft asset data
@@ -23,7 +22,9 @@ export default function SellAsset() {
     const [connection, setConnection] = useState()
     const [symbol, setSymbol] = useState("")
     const [loadToken, setLoadToken] = useState(false)
-    const prices = [];
+    const [show, isShow] = useState(false)
+    const [value, setValue] = useState()
+    const [index, setIndex] = useState()
 
     useEffect(() => {
         loadNFTs()
@@ -39,8 +40,9 @@ export default function SellAsset() {
         loadNFTs()
     }
 
-    const getPrice = async () => {
-
+    const close = () => {
+        isShow(false);
+        loadNFTs();
     }
 
     // @dev load provider, connect to contract and get asset data
@@ -125,24 +127,10 @@ export default function SellAsset() {
 
     // @dev public item to market
     const publicNft = async (values, index) => {
-        console.log("publicItem")
-        // @dev get web3 provider info
-        const provider = new ethers.providers.Web3Provider(connection)
-        const signer = provider.getSigner()
-    
-        // get NFTmarket contract
-        const contract = new ethers.Contract(nftMarketAddress, Market.abi, signer)
-        let listingPrice = await contract.getListingPrice()
-        listingPrice = listingPrice.toString()
-        const itemPrice = ethers.utils.parseUnits(prices[index].toString(), 'wei')
-        const transaction = await contract.createMarketItem(nftAddress, values.tokenId, itemPrice, {value : listingPrice})
-        await transaction.wait()
-        transaction 
-        loadNFTs()
-    }
-
-    const handleSchemaChange = (e) => {
-        prices.push(e)
+        console.log(index)
+        setValue(values)
+        setIndex(index)
+        isShow(true)
     }
 
     return (
@@ -164,15 +152,7 @@ export default function SellAsset() {
                         </div>
                         <div className="p-4 bg-black">
                         <p className="text-2xl font-bold text-white" style={{display: nft.showPublicButton ? 'none': 'block'}}>Price - {nft.price} {symbol}</p>
-                        <input 
-                            className="shadow appearance-none border rounded mb-2 w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            style={{display: nft.showPublicButton ? 'block': 'none'}}
-                            type="number"
-                            id={"price"+i}
-                            placeholder="Price"
-                            onChange={(e) => handleSchemaChange(e)}
-                        />
-                        <button className="w-full bg-gray-500 text-white font-bold py-2 px-12 rounded" style={{display: nft.showPublicButton ? 'block': 'none'}} onClick={() => publicNft(nft)}>Public</button>
+                        <button className="w-full bg-gray-500 text-white font-bold py-2 px-12 rounded" style={{display: nft.showPublicButton ? 'block': 'none'}} onClick={() => publicNft(nft, i)}>Public</button>
                         </div>
                     </div>
                     ))
@@ -202,6 +182,7 @@ export default function SellAsset() {
                 }
             </div>
         </div>
+        <Modal show={show} handleClose={close} index={index} value={value} connection={connection}/>
         </>
     )
 }

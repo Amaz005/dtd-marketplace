@@ -1,10 +1,17 @@
 import { ethers } from 'ethers'
 import Web3Modal from 'Web3Modal'
 
+// const providerOptions = {
+//     metamask: {
+//         display
+//     }
+// }
 
-
-export default function loadWeb3Provider() {
-    const web3modal = new Web3Modal()
-    const connection = await web3modal.connect()
-    provider = new ethers.providers.Web3Provider(connection)
+const initWeb3Modal = async () => {
+    const web3modal = new Web3Modal({
+        cacheProvider: false,
+        disableInjectedProvider: false
+    })
+    return web3modal
 }
+export default initWeb3Modal
