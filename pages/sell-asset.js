@@ -120,7 +120,7 @@ export default function SellAsset() {
         return (
             <>
                 <Navbar/>
-                <div>There is nothing to load</div>
+                <div className="flex item-center justify-center font-bold w-full">There is nothing to load</div>
             </>
         )
     }  
@@ -150,9 +150,8 @@ export default function SellAsset() {
                                 <p className="text-gray-400">{nft.description}</p>
                             </div>
                         </div>
-                        <div className="p-4 bg-black">
-                        <p className="text-2xl font-bold text-white" style={{display: nft.showPublicButton ? 'none': 'block'}}>Price - {nft.price} {symbol}</p>
-                        <button className="w-full bg-gray-500 text-white font-bold py-2 px-12 rounded" style={{display: nft.showPublicButton ? 'block': 'none'}} onClick={() => publicNft(nft, i)}>Public</button>
+                        <div className="p-4 bg-black" style={{display: nft.showPublicButton ? 'block': 'none'}}>
+                        <button className="w-full bg-gray-500 text-white font-bold py-2 px-12 rounded"  onClick={() => publicNft(nft, i)}>Public</button>
                         </div>
                     </div>
                     ))
@@ -170,9 +169,6 @@ export default function SellAsset() {
                             sold.map((nft, i) => (
                                 <div key={i} className="border shadow rounded-xl overflow-hidden">
                                 <Image alt="Picture of the author" width={100} height={52} layout="responsive" src={nft.image} />
-                                <div className="p-4 bg-black">
-                                    <p className="text-2xl font-bold text-white">Price - {nft.price} {symbol}</p>
-                                </div>
                                 </div>
                             ))
                             }

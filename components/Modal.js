@@ -23,26 +23,19 @@ const Modal = ({ handleClose, show, value, connection }) => {
     const alert = useAlert()
     const buyNFT = async (values) => {
         // @dev get web3 provider info
-        console.log('values: ',values)
-        console.log('connection info: ', connection)
         if(!connection) {
             return null
         }
         const provider = new ethers.providers.Web3Provider(connection)
-        console.log('create provider')
         const signer = provider.getSigner()
-        console.log("get provider")
+        const signature = signer.signMessage()
+        
         // get NFTmarket contract
         const contract = new ethers.Contract(nftMarketAddress, Market.abi, signer)
-        console.log('contract: ',contract)
         const priceStep = ethers.utils.parseUnits(values.priceStep.toString(), 'wei')
-        console.log('priceStep: ', priceStep)
         const timestamp = parseInt(values.endTime.getTime()/1000);
-        console.log('timestamp: ', timestamp)
         const endTime = ethers.utils.parseUnits(timestamp.toString(), 'wei')
-        console.log('endTime: ', endTime)
         const lowestPrice = ethers.utils.parseUnits(values.lowestPrice.toString(), 'wei')
-        console.log('lowestPrice: ', lowestPrice)
         try {
             const transaction = await contract.createMarketItem(nftAddress, value.tokenId, priceStep, endTime, lowestPrice)
             const tx = await transaction.wait()

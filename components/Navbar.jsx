@@ -24,27 +24,27 @@ const Navbar = ({dToken}) => {
             if (!isCancelled) {
                 loadWeb3()
             }
+            if(connection) {
+                connection.on("accountsChanged",handleAccountsChanged)
+            }
         });
 
         return () => {
             isCancelled = true;
         };
-    }, [dToken]);
+    }, [dToken,connection]);
 
-    useEffect(() => {
-        if(connection) {
-            connection.on("accountsChanged",handleAccountsChanged)
-        }
-
-    }, [connection])
+    // useEffect(() => {
+    //     if(connection) {
+    //         connection.on("accountsChanged",handleAccountsChanged)
+    //     }
+    // }, [connection])
 
     const handleAccountsChanged = () => {
         loadWeb3()
     }
 
     const handleApprove = async () => {
-        const web3modal = new Web3Modal()
-        const connection = await web3modal.connect()
         const provider = new ethers.providers.Web3Provider(connection)
         const signer = provider.getSigner()
         const tokenContract = new ethers.Contract(tokenAddress, DToken.abi, signer);
@@ -82,6 +82,7 @@ const Navbar = ({dToken}) => {
     }
 
     const loadWeb3 = async () => {
+        console.log('load')
         const web3modal = new Web3Modal()
         const connection = await web3modal.connect()
         if(!connection) {
@@ -95,8 +96,13 @@ const Navbar = ({dToken}) => {
         const web3Provider = new ethers.providers.Web3Provider(connection)
         const signer = web3Provider.getSigner()
         const tokenContract = new ethers.Contract(tokenAddress, DToken.abi, web3Provider);
-        const data = await tokenContract.balanceOf(signer.getAddress())
-        setToken(ethers.utils.formatUnits(data, 'wei'))
+        try {
+            const data = await tokenContract.balanceOf(signer.getAddress())
+            setToken(ethers.utils.formatUnits(data, 'wei'))
+        } catch (error) {
+            alert.error(error.message)
+        }
+        
     }
 
     return (
