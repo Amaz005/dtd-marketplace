@@ -29,7 +29,6 @@ export default function Home() {
   const alert = useAlert()
   const prices = []
   
-
   useEffect(() => {
     loadNFTs()
   }, [])
