@@ -15,8 +15,7 @@ import ConnectScreen from '../components/ConnectScreen'
 import noImage from '../public/no-image.jpg'
 import Navbar from '../components/Navbar.jsx'
 import { useAlert } from 'react-alert'
-import Countdown, {isCompleted, formatTimeDelta } from 'react-countdown';
-import web3 from 'web3'
+import Countdown from 'react-countdown';
 
 const Completionist = () => <span>You are good to go!</span>;
 export default function Home() {
@@ -39,10 +38,6 @@ export default function Home() {
       }
 
   }, [connection])
-
-  const handleEventOccured = () => {
-    console.log('event')
-  }
 
   const handleAccountsChanged = (accounts) => {
     loadNFTs()

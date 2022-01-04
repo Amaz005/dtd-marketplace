@@ -30,16 +30,22 @@ async function main() {
   const swap = await Swap.deploy(dtoken.address)
   await swap.deployed()
 
+  const Verify = await ethers.getContractFactory('VerifyContract')
+  const verify = await Verify.deploy()
+  await verify.deployed()
+
   await dtoken.transfer(swap.address, '1000000000000')
 
   console.log("tokenAddress: " ,dtoken.address)
   console.log("walletAddress: " ,swap.address)
+  console.log("verifyAddress: ", verify.address)
 
   let config = `
     export const nftMarketAddress = "${nftMarket.address}"
     export const nftAddress = "${nft.address}"
     export const tokenAddress = "${dtoken.address}"
     export const walletAddress = "${swap.address}"
+    export const verifyAddress = "${verify.address}"
   `
   let data = JSON.stringify(config)
   fs.writeFileSync('config.js', JSON.parse(data))
