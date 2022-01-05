@@ -7,7 +7,7 @@ import VerifyContract from '../artifacts/contracts/VerifyContract.sol/VerifyCont
 
 export default function SignMessage() {
     const formik = useFormik({
-        initialValues: {message: ''},
+        initialValues: {message: '', name: ''},
         onSubmit: async (values, setSubmitings) => {
             console.log(1)
             sendMessage()
@@ -21,39 +21,57 @@ export default function SignMessage() {
         const provider = new ethers.providers.Web3Provider(connect)
         const signer = provider.getSigner()
         const myAccount = await signer.getAddress();
-        
-        var deadline = Date.now() + 100000;
+        let deadline = Date.now() + 100000;
         const value = await signer.provider.send('net_version', [])
         console.log('value',value)
+        const object = JSON.stringify({
+            content: formik.values.message.trim(),
+            name : formik.values.name.trim()
+
+        })
         const msgParams = JSON.stringify({types:
             {
+            EIP712Domain:[
+                {name:"name",type:"string"},
+                {name:"version",type:"string"},
+                {name:"chainId",type:"uint256"},
+                {name:"verifyingContract",type:"address"}
+            ],
             set:[
                 {name:"sender",type:"address"},
                 {name:"content",type:"string"},
-                {name:"deadline", type:"uint256"}
+                {name:"deadline", type:"uint"}
             ]
             },
             primaryType:"set",
             domain:{name:"SetTest",version:"1", chainId: value,verifyingContract: verifyAddress},
             message:{
                 sender: myAccount,
-                content: formik.values.message,
+                content: formik.values.message.trim(),
                 deadline: deadline
             }
         })
         const signature = await signer.provider.send("eth_signTypedData_v4", [myAccount,msgParams])
-        
-        console.log('signature: ', signature)
         const contract = new ethers.Contract(verifyAddress, VerifyContract.abi, signer)
+        
         try{
-            const transaction = await contract.executeMyFunctionFromSignature(signature, myAccount, deadline, formik.values.message)
+            const transaction = await contract.executeMyFunctionFromSignature(signature, myAccount, deadline, formik.values.message.trim())
+            // const transaction =  await contract.executeSetIfSignatureMatch(v,r,s,myAccount, deadline, formik.values.message.trim(), { from: myAccount })
+            const tmpSign = await contract.getSign()
+            const tmpHashStruct = await contract.getHashStruct()
+            const tmpContent = await contract.get()
+            console.log("signature: ", signature)
+            console.log('tmp Sign: ', tmpSign)
+            console.log('my account: ', myAccount)
+            console.log('tmp HashStruct: ', tmpHashStruct)
+            console.log('tmp content: ', tmpContent)
+            console.log("content: ", formik.values.message)
             await transaction.wait()
-            alert.success("Success!", transaction)
+            alert.success("Success!")
         } catch (error) {
             console.log("Error occurred: ",error)
         }
         
-
     }
     return (
         <>
@@ -77,6 +95,23 @@ export default function SignMessage() {
                         />
                         {formik.errors.message && formik.touched.message && (
                             <p className="error-message">{formik.errors.message}</p>
+                        )}
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                        name
+                        </label>
+                        <input 
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            name="name"
+                            id="name"
+                            placeholder="name"
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                            value={formik.values.name}
+                        />
+                        {formik.errors.name && formik.touched.name && (
+                            <p className="error-message">{formik.errors.name}</p>
                         )}
                     </div>
                         <button 
