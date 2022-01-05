@@ -8,13 +8,13 @@ contract VerifyContract is EIP712{
 
     constructor() EIP712("SetTest","1"){}
 
-    uint storedData;
+    string storedData;
 
-    function set(uint x) internal {
+    function set(string memory x) internal {
         storedData = x;
     }
 
-    function get() public view returns (uint) {
+    function get() public view returns (string memory){
         return storedData;
     }
 
@@ -22,13 +22,13 @@ contract VerifyContract is EIP712{
         bytes memory signature,
         address owner,
         uint256 deadline,
-        uint256 x
+        string memory content
     ) external {
         bytes32 hashStruct = _hashTypedDataV4(keccak256(
             abi.encode(
-                keccak256("set(address sender,uint x,uint deadline)"),
+                keccak256("set(address sender,string content,uint256 deadline)"),
                 owner,
-                x,
+                content,
                 deadline
             )
         ));
@@ -37,7 +37,7 @@ contract VerifyContract is EIP712{
         require(signer != address(0), "ECDSA: invalid signature");
 
         require(block.timestamp < deadline, "MyFunction: signed transaction expired");
-        set(x);
+        set(content);
     }
 
 }

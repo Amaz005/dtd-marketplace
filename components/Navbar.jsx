@@ -135,8 +135,13 @@ const Navbar = ({dToken}) => {
                     </a>
                 </Link>
                 <Link href="/swap-token">
-                    <a className="block mt-4 lg:inline-block lg:mt-0 text-gray-400 hover:text-white hover:underline ">
+                    <a className="block mt-4 lg:inline-block lg:mt-0 text-gray-400 hover:text-white hover:underline mr-4">
                         Swap token
+                    </a>
+                </Link>
+                <Link href="/sign-message">
+                    <a className="block mt-4 lg:inline-block lg:mt-0 text-gray-400 hover:text-white hover:underline ">
+                        Sign message
                     </a>
                 </Link>
                 </div>
