@@ -13,6 +13,11 @@ contract VerifyContract is EIP712{
     bytes32 _hashStruct;
     uint _storedData;
 
+    struct Content {
+        string name;
+        string description;
+    }
+
     function set(uint x) internal {
         _storedData = x;
     }
@@ -37,36 +42,36 @@ contract VerifyContract is EIP712{
         return signer;
     }
 
-    function setContent(string memory x) internal {
-        storedData = x;
-    }
-
-    function getContent() public view returns (string memory){
-        return storedData;
+    function hashContent(Content calldata _content) internal pure returns(bytes32) {
+        return keccak256(abi.encode(
+            keccak256("Content(string name,string description)"),
+            keccak256(bytes(_content.name)),
+            keccak256(bytes(_content.description))
+        ));
     }
 
     function executeMyFunctionFromSignature(
         bytes memory signature,
         address owner,
         uint deadline,
-        string memory content
+        Content calldata content
     ) external {
         bytes32 hashStruct = _hashTypedDataV4(keccak256(
             abi.encode(
-                keccak256("set(address sender,string content,uint deadline)"),
+                keccak256("set(address sender,Content content,uint deadline)Content(string name,string description)"),
                 owner,
-                keccak256(bytes(content)),
+                hashContent(content),
                 deadline
             )
         ));
         address _signer = ECDSA.recover(hashStruct, signature);
         setSign(_signer);
         setHashStruct(hashStruct);
-        require(signer == owner, "MyFunction: invalid signature");
-        require(signer != address(0), "ECDSA: invalid signature");
+        require(_signer == owner, "MyFunction: invalid signature");
+        require(_signer != address(0), "ECDSA: invalid signature");
 
         require(block.timestamp < deadline, "MyFunction: signed transaction expired");
-        setContent(content);
+        
     }
 
     function executeSetIfSignatureMatch(
@@ -111,7 +116,6 @@ contract VerifyContract is EIP712{
         require(_signer == sender, "MyFunction: invalid signature");
         require(_signer != address(0), "ECDSA: invalid signature");
 
-        setContent(x);
     }
 
 }

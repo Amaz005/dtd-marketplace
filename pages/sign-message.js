@@ -24,11 +24,10 @@ export default function SignMessage() {
         let deadline = Date.now() + 100000;
         const value = await signer.provider.send('net_version', [])
         console.log('value',value)
-        const object = JSON.stringify({
-            content: formik.values.message.trim(),
-            name : formik.values.name.trim()
-
-        })
+        const object = {
+            name : formik.values.name.trim(),
+            description: formik.values.message.trim(),
+        }
         const msgParams = JSON.stringify({types:
             {
             EIP712Domain:[
@@ -39,23 +38,47 @@ export default function SignMessage() {
             ],
             set:[
                 {name:"sender",type:"address"},
-                {name:"content",type:"string"},
+                {name:"content",type:"Content"},
                 {name:"deadline", type:"uint"}
+            ],
+            Content:[
+                {name:"name",type:"string"},
+                {name:"description",type:"string"}
             ]
             },
             primaryType:"set",
             domain:{name:"SetTest",version:"1", chainId: value,verifyingContract: verifyAddress},
             message:{
                 sender: myAccount,
-                content: formik.values.message.trim(),
+                content: object,
                 deadline: deadline
             }
         })
+        const types = {
+            set:[
+                {name:"sender",type:"address"},
+                {name:"content",type:"Content"},
+                {name:"deadline", type:"uint"}
+            ],
+            Content:[
+                {name:"name",type:"string"},
+                {name:"description",type:"string"}
+            ]
+        }
+        const mail = {
+            sender: myAccount,
+            content: object,
+            deadline: deadline
+        }
+        const domain = {
+            name:"SetTest",version:"1", chainId: value,verifyingContract: verifyAddress
+        }
         const signature = await signer.provider.send("eth_signTypedData_v4", [myAccount,msgParams])
+        const recoveredAddress = ethers.utils.verifyTypedData(domain, types, mail, signature);
+        console.log(recoveredAddress === myAccount);
         const contract = new ethers.Contract(verifyAddress, VerifyContract.abi, signer)
-        
         try{
-            const transaction = await contract.executeMyFunctionFromSignature(signature, myAccount, deadline, formik.values.message.trim())
+            const transaction = await contract.executeMyFunctionFromSignature(signature, myAccount, deadline, object)
             // const transaction =  await contract.executeSetIfSignatureMatch(v,r,s,myAccount, deadline, formik.values.message.trim(), { from: myAccount })
             const tmpSign = await contract.getSign()
             const tmpHashStruct = await contract.getHashStruct()
