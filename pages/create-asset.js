@@ -16,10 +16,9 @@ import { useAlert } from 'react-alert'
 
 const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
 
-export default function CreateItem() {
+export default function CreateItem({provider, web3Provider}) {
     const [fileURI, setFileURI] = useState(null)
     const [loading, setLoading] = useState(false)
-    const [connection, setConnection] = useState()
     const router = useRouter()
     const alert = useAlert()
     const formik = useFormik({
@@ -39,13 +38,13 @@ export default function CreateItem() {
     })
 
     useEffect(() => {
-        loadWeb3()
-    }, [])
-
-    const loadWeb3 = async () => {
-        const web3modal = new Web3Modal()
-        const connection = await web3modal.connect()
-        setConnection(connection)
+        if(provider) {
+            provider.on("accountsChanged",handleAccountsChanged)
+        }
+    }, [provider])
+    
+    const handleAccountsChanged = () => {
+        loadNFTs()
     }
 
     const onChange = async (e) => {
@@ -65,9 +64,10 @@ export default function CreateItem() {
     }
 
     const createItem = async (values) => {
-
-        const provider = new ethers.providers.Web3Provider(connection)
-        const signer = provider.getSigner()
+        if(!web3Provider) {
+            return null
+        }
+        const signer = web3Provider.getSigner()
         
         let contract = new ethers.Contract(nftAddress, NFT.abi, signer)
         const creater = await signer.getAddress()
@@ -98,7 +98,7 @@ export default function CreateItem() {
 
     return ( 
     <>
-        <Navbar connection={connection}/>
+        <Navbar web3Provider={web3Provider} provider={provider} isLoading={loading}/>
         <div className="w-full max-w-xs justify-center flex m-auto">
                 <form 
                     onSubmit={formik.handleSubmit}

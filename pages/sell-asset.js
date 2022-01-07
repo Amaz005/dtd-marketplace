@@ -14,7 +14,7 @@ import Loading from '../components/LoadingScreen'
 import Navbar from '../components/Navbar.jsx'
 import Modal from '../components/Modal'
 
-export default function SellAsset() {
+export default function SellAsset(provider) {
    // @dev declare variable that will contain nft asset data
     const [nfts, setNfts] = useState([])
     const [sold, setSold] = useState([])
@@ -31,10 +31,10 @@ export default function SellAsset() {
     },[])
 
     useEffect(() => {
-        if(connection) {
-            connection.on("accountsChanged",handleAccountsChanged)
+        if(provider) {
+            provider.on("accountsChanged",handleAccountsChanged)
         }
-    }, [connection])
+    }, [provider])
 
     const handleAccountsChanged = (accounts) => {
         loadNFTs()
@@ -48,10 +48,10 @@ export default function SellAsset() {
     // @dev load provider, connect to contract and get asset data
     const loadNFTs = async () =>{
         try {
-            const web3modal = new Web3Modal()
-            const connection = await web3modal.connect()
-            const provider = new ethers.providers.Web3Provider(connection)
-            const signer = provider.getSigner()
+            if(!web3Provider) {
+                return null
+            }
+            const signer = web3Provider.getSigner()
             setConnection(connection)
             setLoadToken(true)
             const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
@@ -135,7 +135,7 @@ export default function SellAsset() {
 
     return (
         <>
-        <Navbar dToken={loadToken}/>
+        <Navbar web3Provider={web3Provider} provider={provider} isLoading={loadToken}/>
         <div>
             <div className="p-4">
                 <h2 className="text-2xl py-2">Items Created</h2>

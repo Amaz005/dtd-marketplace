@@ -19,16 +19,15 @@ const CalendarContainer = ({children}) => {
     )
 }
 
-const Modal = ({ handleClose, show, value, connection }) => {
+const Modal = ({ handleClose, show, value, web3Provider }) => {
     const alert = useAlert()
     const buyNFT = async (values) => {
         // @dev get web3 provider info
-        if(!connection) {
+        if(!web3Provider) {
             return null
         }
-        const provider = new ethers.providers.Web3Provider(connection)
-        const signer = provider.getSigner()
-        const signature = signer.signMessage()
+        const signer = web3Provider.getSigner()
+        const signature = web3Provider.signMessage()
         
         // get NFTmarket contract
         const contract = new ethers.Contract(nftMarketAddress, Market.abi, signer)

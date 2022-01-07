@@ -18,7 +18,7 @@ import { useAlert } from 'react-alert'
 import Countdown from 'react-countdown';
 
 const Completionist = () => <span>You are good to go!</span>;
-export default function Home() {
+export default function Home({provider,web3Provider}) {
   // @dev declare variable that will contain nft asset data
   const [nfts, setNfts] = useState([])
   const [symbol, setSymbol] = useState("")
@@ -33,25 +33,23 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-      if(connection) {
-        connection.on("accountsChanged",handleAccountsChanged)
-      }
+    if(provider) {
+        provider.on("accountsChanged",handleAccountsChanged)
+    }
+  }, [provider])
 
-  }, [connection])
-
-  const handleAccountsChanged = (accounts) => {
-    loadNFTs()
-    console.log("accountsChanged", accounts)
+  const handleAccountsChanged = () => {
+      loadNFTs()
   }
 
   // @dev load provider, connect to contract and get asset data
   async function loadNFTs() {
-    
+    console.log('get provider: ',provider)
     try {
-      const web3modal = new Web3Modal()
-      const connection = await web3modal.connect()
-      const userProvider = new ethers.providers.Web3Provider(connection)
-      const userSigner = userProvider.getSigner()
+      if(!web3Provider) {
+        return null
+      }
+      const userSigner = web3Provider.getSigner()
       console.log("connect: ", connection)
       setConnection(connection)
       const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545/")
@@ -126,15 +124,10 @@ export default function Home() {
   // @dev handle buying event from user,
   const buyNft = async (nft, i) => {
     console.log("buyNFT")
-    if(!connection) {
-      return (
-        <div>
-          <ConnectScreen />
-        </div>
-      )
-    }
-    const provider = new ethers.providers.Web3Provider(connection)
-    const signer = provider.getSigner()
+    if(!web3Provider) {
+      return
+    } 
+    const signer = web3Provider.getSigner()
     const contract = new ethers.Contract(nftMarketAddress, Market.abi, signer)
     console.log(prices[i])
     const price = ethers.utils.parseUnits(prices[i].toString(), 'wei')
@@ -176,7 +169,7 @@ export default function Home() {
 
   return (
     <>
-    <Navbar dToken={loadToken}/>
+    <Navbar web3Provider={web3Provider} provider={provider} isLoading={loadToken}/>
     <div className="overflow-auto">
       <div className="px-4" styles={{maxWidth: '1600px'}}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">

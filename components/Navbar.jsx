@@ -9,44 +9,32 @@ import Web3Modal from 'web3modal'
 import { useAlert } from 'react-alert'
 import Modal from '../components/Modal'
 
-const simulateSlowNetworkRequest = () =>
-    new Promise(resolve => setTimeout(resolve, 500));
-
-
-const Navbar = ({dToken}) => {
+const Navbar = ({isLoading,provider,web3Provider}) => {
     const [token, setToken] = useState(0)
-    const [connection, setConnection] = useState()
     const alert = useAlert()
+
     useEffect(() => {
-        let isCancelled = false;
-    
-        simulateSlowNetworkRequest().then(() => {
-            if (!isCancelled) {
-                loadWeb3()
-            }
-            if(connection) {
-                connection.on("accountsChanged",handleAccountsChanged)
-            }
-        });
+        if(provider) {
+            provider.on("accountsChanged",handleAccountsChanged)
+        }
+    }, [provider])
 
-        return () => {
-            isCancelled = true;
-        };
-    }, [dToken,connection]);
-
-    // useEffect(() => {
-    //     if(connection) {
-    //         connection.on("accountsChanged",handleAccountsChanged)
-    //     }
-    // }, [connection])
+    useEffect(() => {
+        console.log('isloading: ' + isLoading)
+        if(isLoading) {
+            loadWeb3()
+        }
+    }, [isLoading])
 
     const handleAccountsChanged = () => {
         loadWeb3()
     }
 
     const handleApprove = async () => {
-        const provider = new ethers.providers.Web3Provider(connection)
-        const signer = provider.getSigner()
+        if(!web3Provider) {
+            return null
+        }
+        const signer = web3Provider.getSigner()
         const tokenContract = new ethers.Contract(tokenAddress, DToken.abi, signer);
         const dToken = ethers.utils.parseUnits(token.toString(), 'wei')
         console.log('dtoken: ',dToken)
@@ -82,18 +70,10 @@ const Navbar = ({dToken}) => {
     }
 
     const loadWeb3 = async () => {
-        console.log('load')
-        const web3modal = new Web3Modal()
-        const connection = await web3modal.connect()
-        if(!connection) {
-            return
+        console.log('web3provider: ', web3Provider)
+        if(!web3Provider) {
+            return null
         }
-        setConnection(connection)
-        const log = localStorage.getItem("WEB3_CONNECT_CACHED_PROVIDER")
-        if(log == "injected") { 
-            console.log("not connect")
-        }
-        const web3Provider = new ethers.providers.Web3Provider(connection)
         const signer = web3Provider.getSigner()
         const tokenContract = new ethers.Contract(tokenAddress, DToken.abi, web3Provider);
         try {

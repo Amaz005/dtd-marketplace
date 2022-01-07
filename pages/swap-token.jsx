@@ -2,14 +2,12 @@ import {useFormik} from 'formik'
 import {useState} from 'react'
 import * as Yup from 'yup'
 import { ethers } from 'ethers'
-import Web3Modal from 'web3modal'
-import {walletAddress, tokenContract} from '../config'
+import {walletAddress} from '../config'
 import Swap from '../artifacts/contracts/Swap.sol/Swap.json'
 import Navbar from '../components/Navbar.jsx'
-import Alert from '../components/Alert.jsx'
 import { useAlert } from 'react-alert'
 
-export default function SwapToken (){
+export default function SwapToken ({provider, web3Provider}){
     const [loadToken, setLoadToken] = useState(false)
     const [isSell, setIsSell] = useState(false)
     const alert = useAlert()
@@ -20,10 +18,12 @@ export default function SwapToken (){
 
     // @dev buy token
     const buyToken = async(values) => {
-        const web3modal = new Web3Modal()
-        const connection = await web3modal.connect()
-        const provider = new ethers.providers.Web3Provider(connection)
-        const signer = provider.getSigner()
+        console.log("get web3Provider: ", web3Provider)
+        console.log('get provider: ',provider)
+        if(!web3Provider) {
+            return null
+        }
+        const signer = web3Provider.getSigner()
         
         const swapContract = new ethers.Contract(walletAddress, Swap.abi, signer)
         const amount = ethers.utils.parseUnits(values.amount1, 'wei')
@@ -40,10 +40,10 @@ export default function SwapToken (){
 
     const transferToken = async(values) => {
         console.log('values: ',values)
-        const web3modal = new Web3Modal()
-        const connection = await web3modal.connect()
-        const provider = new ethers.providers.Web3Provider(connection)
-        const signer = provider.getSigner()
+        if(!web3Provider) {
+            return null
+        }
+        const signer = web3Provider.getSigner()
 
         const swapContract = new ethers.Contract(walletAddress, Swap.abi, signer)
         const amount = ethers.utils.parseUnits(values.amount3.toString(), 'wei')
@@ -88,7 +88,7 @@ export default function SwapToken (){
 
     return (
         <>
-        <Navbar dToken={loadToken}/>
+        <Navbar web3Provider={web3Provider} provider={provider} isLoading={loadToken}/>
     
         <div className='text-center mt-8'>
             <button
