@@ -7,10 +7,13 @@ module.exports = {
         '128': '32rem',
         '70s': '70vh'
       }
+      
     },
   },
   variants: { 
-    extend: {},
+    extend: {
+      animation: ['group-hover'],
+    },
   },
   plugins: [
   ],
