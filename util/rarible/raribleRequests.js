@@ -2,17 +2,18 @@ import axios from 'axios';
 import { makerAddress, assetAddresses } from '../../contants/address';
 import {
   currentNetwork,
-  apiDomain,
 } from '../../config_network';
 import { sign } from './lazyMint';
 
 export async function generateTokenId(contract, minter) {
   console.log('generating tokenId for', contract, minter);
-  const raribleTokenIdUrl = `${apiDomain}/protocol/v0.1/ethereum/nft/collections/${contract}/generate_token_id?minter=${minter}`;
+  console.log('domain: ', assetAddresses[currentNetwork].domain)
+  const raribleTokenIdUrl = `${assetAddresses[currentNetwork].domain}/v0.1/nft/collections/${contract}/generate_token_id?minter=${minter}`;
+  //https://ethereum-api-staging.rarible.org/v0.1/nft-order/collections/{collection}/generate_token_id
+  //https://ethereum-api-dev.rarible.org/v0.1/nft-order/collections/{collection}/generate_token_id
   const { data } = await axios.get(raribleTokenIdUrl);
 
   const { tokenId } = data;
-
   return tokenId;
 }
 
@@ -31,7 +32,7 @@ async function createLazyMintForm(
     creators: [
       { account: minter, value: 10000 },
     ],
-    royalties: [],
+    royalties: [royalties],
   };
 }
 
@@ -61,8 +62,12 @@ export async function createLazyMint(
 }
 
 export async function putLazyMint(form) {
-  const raribleMintUrl = `${apiDomain}/protocol/v0.1/ethereum/nft/mints`;
-  console.log(form);
+  const raribleMintUrl = `${assetAddresses[currentNetwork].domain}/v0.1/nft/mints`
+  //for robsten ${apiDomain}/v0.1/nft-order/mints
+  //https://ethereum-api-staging.rarible.org/v0.1/nft/mints
+  //for rinkeby ${apiDomain}/v0.1/nft/mints
+  console.log('form: ',form);
+  console.log('json form: ',JSON.stringify(form))
   const raribleMintResult = await axios.post(
     raribleMintUrl,
     JSON.stringify(form),

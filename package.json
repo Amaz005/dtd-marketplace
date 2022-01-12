@@ -9,8 +9,7 @@
     "dev": "next dev",
     "build": "npx hardhat compile && next build",
     "start": "next start",
-    "lint": "next lint",
-    "heroku-postbuild": "yarn run build"
+    "lint": "next lint"
   },
   "dependencies": {
     "@ethersproject/providers": "^5.5.1",
@@ -18,11 +17,6 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.4.1",
     "@openzeppelin/contracts-upgradeable": "^4.4.0",
-    "@rarible/action": "^0.6.1",
-    "@rarible/protocol-api-client": "^0.1.8",
-    "@rarible/protocol-ethereum-sdk": "^0.12.28",
-    "@rarible/types": "^0.6.1",
-    "@rarible/web3-ethereum": "^0.12.26",
     "@walletconnect/web3-provider": "^1.6.6",
     "@web3-react/core": "^6.1.9",
     "@web3-react/injected-connector": "^6.0.7",
@@ -48,6 +42,7 @@
     "@nomiclabs/hardhat-etherscan": "^2.1.8",
     "@nomiclabs/hardhat-ganache": "^2.0.1",
     "@openzeppelin/hardhat-upgrades": "^1.12.0",
+    "@rarible/sdk": "^0.8.6-alpha.0",
     "autoprefixer": "^10.2.6",
     "eslint": "7.29.0",
     "eslint-config-next": "11.0.1",

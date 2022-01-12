@@ -1,5 +1,4 @@
 import { useEffect, useState} from 'react'
-import { ethers } from 'ethers'
 import {useRouter} from 'next/router'
 import Image from 'next/image'
 import {
@@ -28,7 +27,7 @@ const mintFormInitial = {
     loading: false,
 }
 
-export default function CreateItem({accounts, provider, web3Provider}) {
+export default function CreateItem({accounts, provider, web3Provider, raribleSDK}) {
     const [fileURI, setFileURI] = useState(null)
     const [fileToUpload, setFileToUpload] = useState(null)
     const [loading, setLoading] = useState(false)
@@ -65,7 +64,7 @@ export default function CreateItem({accounts, provider, web3Provider}) {
     }, [provider])
     
     const handleAccountsChanged = () => {
-        loadNFTs()
+        console.log("changed account")
     }
 
     const onChange = async (e) => {
@@ -104,17 +103,16 @@ export default function CreateItem({accounts, provider, web3Provider}) {
             collection.id,
             accounts[0],
             fullObjectHash,
-          { account: accounts[0], value: data.royalties * 100 },
+            { account: accounts[0], value: data.royalties },
         );
-    
-        console.log(form);
+
         await putLazyMint(form);
         await handleGetMyNfts(accounts[0])
     }
 
     const handleGetMyNfts = async (owner) => {
         const { data } = await axios.get(
-            `${apiDomain}/protocol/v0.1/ethereum/nft/items/byOwner`,
+            `${assetAddresses[currentNetwork].domain}/v0.1/nft/items/byOwner`,
             {
                     params: {
                     owner,

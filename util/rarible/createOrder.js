@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { sign } from './orders';
-import { apiDomain } from '@/config';
+import { assetAddresses } from '../../contants/address';
+import { currentNetwork } from '../../config_network';
 
 const random = (min, max) => Math.floor(Math.random() * (max - min)) + min;
 
 async function prepareOrderMessage(form) {
-  const raribleEncodeOrderUrl = `${apiDomain}/protocol/v0.1/ethereum/order/encoder/order`;
+  const raribleEncodeOrderUrl = `${assetAddresses[currentNetwork].domain}/v0.1/order/encoder/order`;
   const res = await axios.post(raribleEncodeOrderUrl, JSON.stringify(form), {
     headers: { 'Content-Type': 'application/json' },
   });
@@ -96,7 +97,7 @@ export const createSellOrder = async (type, provider, params) => {
       break;
   }
 
-  const raribleOrderUrl = `${apiDomain}/protocol/v0.1/ethereum/order/orders`;
+  const raribleOrderUrl = `${assetAddresses[currentNetwork].domain}/v0.1/order/orders`;
 
   const raribleJson = { ...order, signature: signature.result };
   console.log(raribleJson);
@@ -140,7 +141,7 @@ export const matchSellOrder = async (sellOrder, params) => {
 };
 
 export async function prepareMatchingOrder(sellOrder, accountAddress) {
-  const rariblePrepareTxUrl = `${apiDomain}/protocol/v0.1/ethereum/order/orders/${sellOrder.hash}/prepareTx`;
+  const rariblePrepareTxUrl = `${assetAddresses[currentNetwork].domain}/v0.1/order/orders/${sellOrder.hash}/prepareTx`;
   const res = await axios.post(
     rariblePrepareTxUrl,
     JSON.stringify({
@@ -162,7 +163,7 @@ export async function prepareMatchingOrder(sellOrder, accountAddress) {
 
 async function prepareTx(hash, maker, amount) {
   const result = await axios.post(
-    `${apiDomain}/protocol/v0.1/ethereum/order/orders/${hash}/prepareTx`,
+    `${assetAddresses[currentNetwork].domain}/v0.1/order/orders/${hash}/prepareTx`,
     { maker, amount, payouts: [], originFees: [] },
   );
   console.log(result);
