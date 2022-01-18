@@ -1,7 +1,8 @@
 require("@nomiclabs/hardhat-waffle")
 require('@openzeppelin/hardhat-upgrades')
 require('@nomiclabs/hardhat-etherscan')
-require("@nomiclabs/hardhat-ganache");
+require("@nomiclabs/hardhat-ganache")
+require("hardhat-gas-reporter")
 require('dotenv').config()
 const fs = require('fs')
 const privateKey = fs.readFileSync(".secret").toString().trim() || "01234567890123456789"
@@ -19,6 +20,7 @@ module.exports = {
     },
     bsctest: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+      //https://data-seed-prebsc-1-s1.binance.org:8545/
       accounts: [privateKey],
       chainId: 97
     }

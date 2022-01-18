@@ -7,8 +7,8 @@ import "react-datepicker/dist/react-datepicker.css"
 import {useState, useEffect} from 'react'
 import Web3Modal from 'web3modal'
 import {ethers} from 'ethers'
-import {createRaribleSdk} from '@rarible/sdk'
-import {EthereumWallet} from '@rarible/sdk-wallet'
+import { createRaribleSdk, RaribleSdk } from "@rarible/protocol-ethereum-sdk"
+import { Web3Ethereum } from "@rarible/web3-ethereum"
 import Web3 from 'web3'
 
 const options = {
@@ -42,12 +42,14 @@ function MyApp({ Component, pageProps }) {
     if (web3Modal) {
       const provider = await web3Modal.connect()
       console.log('provider: ', provider)
-      const ethWallet = new EthereumWallet(ethereum)
-      const raribleSdk = createRaribleSdk(ethWallet, "staging")
-      setRaribleSDK(raribleSdk)
+      // const web3 = new Web3(ethereum)
+      // console.log('web3: ',web3)
+      // const raribleSdk = createRaribleSdk(new Web3Ethereum({ web3 }), "rinkeby")
+      // setRaribleSDK(raribleSdk)
       console.log('rarible: ', raribleSDK)
       setProvider(provider)
       setWeb3Provider(new ethers.providers.Web3Provider(provider))
+      console.log("_app-web3Provider: ", web3Provider)
       provider.on("accountsChanged",(accounts) => {
         setAccounts(accounts)
       })

@@ -1,7 +1,6 @@
 import {ethers} from 'ethers'
 import {useState, useEffect} from 'react'
 import axios from 'axios'
-import Web3Modal from 'web3modal'
 import {
   nftAddress, nftMarketAddress,
   tokenAddress
@@ -11,7 +10,6 @@ import DToken from '../artifacts/contracts/DToken.sol/DToken.json'
 import Market from '../artifacts/contracts/NFTMarket.sol/NFTMarket.json'
 import Image from "next/image"
 import Loading from '../components/LoadingScreen'
-import ConnectScreen from '../components/ConnectScreen'
 import noImage from '../public/no-image.jpg'
 import Navbar from '../components/Navbar.jsx'
 import { useAlert } from 'react-alert'
@@ -45,73 +43,71 @@ export default function Home({provider,web3Provider}) {
   // @dev load provider, connect to contract and get asset data
   async function loadNFTs() {
     console.log('get provider: ',provider)
-    try {
-      if(!web3Provider) {
-        return null
-      }
-      const userSigner = web3Provider.getSigner()
-      console.log("connect: ", connection)
-      setConnection(connection)
-      const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545/")
-      const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
-      const dTokenContract = new ethers.Contract(tokenAddress, DToken.abi, provider)
-      const marketContract = new ethers.Contract(nftMarketAddress, Market.abi, provider)
-      setLoadingState(true)
-      // marketContract.on('bidMarketItem', handleEventOccured)
-      let totalSupply = await tokenContract.getTotalSupply()
-      totalSupply = ethers.utils.formatUnits(totalSupply,'wei')
-      const symbol = await dTokenContract.symbol.call()
-      setLoadingState(false)
-      setSymbol(symbol)
+    console.log("web3Provider: ", web3Provider)
+    // try {
+    //   if(!web3Provider) {
+    //     return null
+    //   }
+    //   const userSigner = web3Provider.getSigner()
+    //   console.log("connect: ", connection)
+    //   setConnection(connection)
+    //   const provider = new ethers.providers.JsonRpcProvider("https://rinkeby.infura.io/v3/9ac2da124ced41e197c43b093c503302")
+    //   const tokenContract = new ethers.Contract(nftAddress, NFT.abi, provider)
+    //   const dTokenContract = new ethers.Contract(tokenAddress, DToken.abi, provider)
+    //   const marketContract = new ethers.Contract(nftMarketAddress, Market.abi, provider)
+    //   setLoadingState(true)
+    //   // marketContract.on('bidMarketItem', handleEventOccured)
+    //   let totalSupply = await tokenContract.getTotalSupply()
+    //   totalSupply = ethers.utils.formatUnits(totalSupply,'wei')
+    //   const symbol = await dTokenContract.symbol.call()
+    //   setLoadingState(false)
+    //   setSymbol(symbol)
 
-      const data = await marketContract.getAllUnsoldItems()
+    //   const data = await marketContract.getAllUnsoldItems()
       
-      setLoadToken(true);
+    //   setLoadToken(true);
       
-      if(data.length > 0) {
-        const items = await Promise.all( data.map(async (i) => {
-          const tokenURI = await tokenContract.tokenURI(i.tokenId)
-          const meta = await axios.get(tokenURI)
-          if(meta.data.image === undefined) {
-            meta.data.image = noImage.src
-          }
-          let showBuyButton
-          let currentAccount = await userSigner.getAddress()
-          let price = ethers.utils.formatUnits(i.lowestPrice.toString(), 'wei')
-          const highestPrice = ethers.utils.formatUnits(i.highestPrice.toString(), 'wei')
-          let timestamp = ethers.utils.formatUnits(i.endTime.toString(), 'wei')
-          let timeRemain = (timestamp* 1000) - Date.now()
-          console.log(timeRemain)
-          price = parseInt(price)
-          if (i.seller == currentAccount && !i.isPublished) {
-            showBuyButton = false
-          } else if (i.seller != currentAccount && i.isPublished){
-            showBuyButton = true
-          }
-          let items = {
-            price,
-            itemId: i.itemId,
-            tokenId: i.tokenId,
-            seller: i.seller,
-            image: meta.data.image,
-            name: meta.data.name,
-            description: meta.data.description,
-            showBuyButton: showBuyButton,
-            endTime: timeRemain,
-            highestPrice,
-            payerAddress: i.payerAddress
-          }
-          return items
-        }))
-        setNfts(items)
-      }
+    //   if(data.length > 0) {
+    //     const items = await Promise.all( data.map(async (i) => {
+    //       const tokenURI = await tokenContract.tokenURI(i.tokenId)
+    //       const meta = await axios.get(tokenURI)
+    //       if(meta.data.image === undefined) {
+    //         meta.data.image = noImage.src
+    //       }
+    //       let showBuyButton
+    //       let currentAccount = await userSigner.getAddress()
+    //       let price = ethers.utils.formatUnits(i.lowestPrice.toString(), 'wei')
+    //       const highestPrice = ethers.utils.formatUnits(i.highestPrice.toString(), 'wei')
+    //       let timestamp = ethers.utils.formatUnits(i.endTime.toString(), 'wei')
+    //       let timeRemain = (timestamp* 1000) - Date.now()
+    //       console.log(timeRemain)
+    //       price = parseInt(price)
+    //       if (i.seller == currentAccount && !i.isPublished) {
+    //         showBuyButton = false
+    //       } else if (i.seller != currentAccount && i.isPublished){
+    //         showBuyButton = true
+    //       }
+    //       let items = {
+    //         price,
+    //         itemId: i.itemId,
+    //         tokenId: i.tokenId,
+    //         seller: i.seller,
+    //         image: meta.data.image,
+    //         name: meta.data.name,
+    //         description: meta.data.description,
+    //         showBuyButton: showBuyButton,
+    //         endTime: timeRemain,
+    //         highestPrice,
+    //         payerAddress: i.payerAddress
+    //       }
+    //       return items
+    //     }))
+    //     setNfts(items)
+    //   }
       
-    } catch (error) {
-      console.log( "you have some problem: ",error)
-      return (
-        <div>Something went wrong</div>
-      )
-    }
+    // } catch (error) {
+    //   console.log( "you have some problem: ",error)
+    // }
   }
 
   const onchangeValue = (e, i) => {
@@ -144,14 +140,14 @@ export default function Home({provider,web3Provider}) {
   if (loadingState && !nfts.length) {
     return (
       <>
-        <Navbar/>
+        <Navbar web3Provider={web3Provider} provider={provider} isLoading={loadToken}/>
         <Loading loading={loadingState} />
       </>
     )
   } else if (!loadingState && !nfts.length) {
     return (
       <>
-        <Navbar/>
+        <Navbar web3Provider={web3Provider} provider={provider} isLoading={loadToken}/>
         <div>There is nothing to load</div>
       </>
     )

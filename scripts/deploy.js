@@ -7,13 +7,13 @@ require('@nomiclabs/hardhat-etherscan')
 async function main() {
   //deploy
 
-  const accounts = await hre.ethers.getSigners();
+  const accounts = await hre.ethers.getSigners()
   console.log("account 0: ", accounts[0].address)
   
-  const NFTMarket = await ethers.getContractFactory("NFTMarket");
-  const nftMarket = await upgrades.deployProxy(NFTMarket, {kind: "uups"} );
-  await nftMarket.deployed();
-  console.log("nftMarket deployed to:", nftMarket.address);
+  const NFTMarket = await ethers.getContractFactory("NFTMarket")
+  const nftMarket = await upgrades.deployProxy(NFTMarket, {kind: "uups"} )
+  await nftMarket.deployed()
+  console.log("nftMarket deployed to:", nftMarket.address)
 
   console.log("implementation address:", await hre.upgrades.erc1967.getImplementationAddress(nftMarket.address));
 

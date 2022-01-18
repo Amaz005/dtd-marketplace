@@ -5,9 +5,8 @@ import DToken from '../artifacts/contracts/DToken.sol/DToken.json'
 import {tokenAddress, nftMarketAddress, walletAddress} from '../config'
 import {useEffect, useState} from 'react'
 import { ethers } from 'ethers'
-import Web3Modal from 'web3modal'
 import { useAlert } from 'react-alert'
-import Modal from '../components/Modal'
+import Vesting from '../artifacts/contracts/Vesting.sol/Vesting.json'
 
 const Navbar = ({isLoading,provider,web3Provider}) => {
     const [token, setToken] = useState(0)
@@ -28,6 +27,40 @@ const Navbar = ({isLoading,provider,web3Provider}) => {
 
     const handleAccountsChanged = () => {
         loadWeb3()
+    }
+
+    const callTest = async () => {
+        console.log("web3Provider: ", web3Provider)
+        if(!web3Provider) {
+            return null
+        }
+        console.log("call test")
+        const signer = web3Provider.getSigner()
+        const owner = await signer.getAddress()
+        const vestingContract = new ethers.Contract("0x0d302e592ce1255C4Dbe74D577810c04dfb5dD2a",Vesting.abi, signer)
+        const tokenContract = new ethers.Contract("0xbF1dE3589aaCfe1857F467D502E1cD8D2c36A8a6", DToken.abi, signer)
+        // tokenContract.transfer(owner, "10000000000")
+        try {
+            // const schemeName = "scheme 1"
+            let durationTime = Date.now() + 1000000
+            durationTime = ethers.utils.parseUnits(durationTime.toString(),"wei")
+    
+            const timeClaim = 3
+            console.log("owner: ", owner)
+            const schemeCreate = await vestingContract
+                .newSchemeInformation(
+                    durationTime, 
+                    timeClaim, 
+                    "0xbF1dE3589aaCfe1857F467D502E1cD8D2c36A8a6"
+                )
+            let dataTx = await schemeCreate.wait()
+            let result = dataTx.events[0]?.args
+    
+            console.log('success: ')
+            console.log(dataTx)
+        } catch(e) {
+            console.log(e)
+        }
     }
 
     const handleApprove = async () => {
@@ -127,7 +160,7 @@ const Navbar = ({isLoading,provider,web3Provider}) => {
                 </div>
                 <div>
                     <span className="inline-block text-sm px-4 py-2 leading-none text-white  mt-4 lg:mt-0">Wallet: {token} DTK</span>
-                    <a href="#" className="inline-block text-sm px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-gray-800 hover:bg-white mt-4 lg:mt-0" onClick={handleApprove}>Approve</a>
+                    <a href="#" className="inline-block text-sm px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-gray-800 hover:bg-white mt-4 lg:mt-0" onClick={callTest}>Approve</a>
                 </div>
             </div>
         
