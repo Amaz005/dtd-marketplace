@@ -83,7 +83,7 @@ contract Vesting is
     );
 
     event AddToken(uint256 amount);
-    event Claim(address wallet, uint256 amount);
+    event Claim(address wallet, uint256 amount, uint256[] vestingIds);
     event EmergencyWithdraw(address preventiveWallet, uint256 amount);
     event PreventiveWallet(address preventiveWallet);
     event Operator(address operator, bool isOperator);
@@ -242,32 +242,61 @@ contract Vesting is
         );
     }
 
-    function claim(address _wallet, bool _isClaimAll, uint256 _vestingId) public nonReentrant whenNotPaused {
+    function claim(address _wallet, uint256[] memory _vestingIds, address tokenAddress) public nonReentrant whenNotPaused {
         require(!msg.sender.isContract(), "caller-invalid");
         
         uint256 withdrawable = 0;
-        
-        if(_isClaimAll) {
-            
-        } else {
-            VestingInformation storage vestingInfo = vestingInfors[_vestingId];
-            SchemeInformation memory schemeInfo = schemeInfos[vestingInfo.schemeId];
-            uint256 totalTime = schemeInfo.cliffTime.add(schemeInfo.vestTime);
-            
-            for(uint i = 0; i < totalTime; i++) {
-                
-                require(vestingInfo.startTime.add(schemeInfo.periodTime) > block.timestamp, "not in time");
+        uint256 countVestId = 0;
+        for (uint256 i = 0; i < _vestingIds.length; i++) {
+            if(vestingInfors[_vestingIds[i]].status == 1 && vestingInfors[_vestingIds[i]].wallet == msg.sender) {
+                countVestId;
             }
-
         }
 
-        // require(IERC20Upgradeable(schemeInfo.tokenAddress).balanceOf(address(this)) > withdrawable, "contract dont have enough token to transfer");
-        // IERC20Upgradeable(schemeInfo.tokenAddress).transfer(_wallet, withdrawable);
-        // emit Claim(_wallet, withdrawable);
+        uint256[] memory vestIdsList = new uint256[](countVestId);
+        uint256 count = 0;
+        for (uint256 i = 0; i < vestIdsList.length; i++) {
+            if(vestingInfors[_vestingIds[i]].status == 1 && vestingInfors[_vestingIds[i]].wallet == msg.sender) {
+                withdrawable = withdrawable.add(_getAmountCanClaim(_vestingIds[i]));
+                vestingInfors[_vestingIds[i]].totalClaimed = vestingInfors[_vestingIds[i]].totalClaimed.add(withdrawable);
+                vestIdsList[count] = _vestingIds[i];
+                count++;
+            }
+            if(vestingInfors[_vestingIds[i]].totalClaimed == vestingInfors[_vestingIds[i]].totalAmount) {
+                vestingInfors[_vestingIds[i]].status = 2;
+            }
+        }
+        require(IERC20Upgradeable(tokenAddress).balanceOf(address(this)) >= withdrawable, "contract dont have enough token to transfer");
+        if(withdrawable != 0) {
+            IERC20Upgradeable(tokenAddress).transfer(_wallet, withdrawable);
+        }
+        
+        emit Claim(_wallet, withdrawable, vestIdsList);
     }
 
-    function _getAmountCanClaim() internal returns(uint256) {
-        
+    function _getAmountCanClaim(uint256 _vestingId) internal view returns(uint256) {
+        VestingInformation memory vestingInfo = vestingInfors[_vestingId];
+        SchemeInformation memory schemeInfo = schemeInfos[vestingInfo.schemeId];
+        uint256 withdrawable = 0;
+        uint256 endTime = vestingInfo.startTime.add(schemeInfo.durationTime);
+        if (block.timestamp < endTime && block.timestamp > vestingInfo.startTime && vestingInfo.status == 1) {
+            if (vestingInfo.vestedAmount == vestingInfo.totalAmount) {
+                return 0;
+            }
+            withdrawable = block
+                .timestamp
+                .sub(vestingInfo.startTime)
+                .div(schemeInfo.periodTime)
+                .add(1)
+                .mul(vestingInfo.periodAmount)
+                .sub(vestingInfo.vestedAmount);
+            if (block.timestamp.add(schemeInfo.periodTime) > endTime) {
+                withdrawable = vestingInfo.totalAmount.sub(vestingInfo.vestedAmount);
+            }
+        } else if (block.timestamp > endTime) {
+            withdrawable = vestingInfo.totalAmount.sub(vestingInfo.vestedAmount);
+        }
+        return withdrawable;
     }
 
     function getListOperators() public view returns (address[] memory) {
