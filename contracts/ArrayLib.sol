@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
  * @dev Collection of functions related to the array type
  */
 library ArrayLib {
+
     function checkExistsInArray(address[] memory _arr, address _address)
         internal
         pure

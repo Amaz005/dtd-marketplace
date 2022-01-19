@@ -72,46 +72,49 @@ describe("vesting", function() {
                                         vestingInfor.maxSupplyClaim, 
                                         vestingInfor.amountDeposit, 
                                         vestingInfor.schemeId, 
-                                        vestingInfor.lastClaim, 
                                         numerators, 
                                         denominators, 
                                         timeWithDraws
                                     )
         const txData = await transaction.wait()
-        const event = txData.events[2].args
-        console.log("=======================================================")
-        console.log("txData: ", txData)
-        console.log("=======================================================")
-        console.log("vesting event: ",event)
-        console.log("=======================================================")
-        vestingInfor.vestingId = txData.events[2]?.args.vestingId
-        vestingInfor.lastClaim = txData.events[2]?.args.lastClaimId
-        vestingInfor.schemeId = txData.events[2]?.args.schemeId
+        for (let i = 0; i < txData.events.length; i++) {
+            const event = txData.events[i]
+            console.log("event infor",event)
+        }
+        // const event = txData.events[2].args
+        // console.log("=======================================================")
+        // console.log("txData: ", txData)
+        // console.log("=======================================================")
+        // console.log("vesting event: ",event)
+        // console.log("=======================================================")
+        // vestingInfor.vestingId = txData.events[2]?.args.vestingId
+        // vestingInfor.lastClaim = txData.events[2]?.args.lastClaimId
+        // vestingInfor.schemeId = txData.events[2]?.args.schemeId
     })
-    it("should claim token", async () => {
-        //address _wallet, uint256 _vestingId, uint256 _schemeDetailId, uint256 _schemeId, bool isClaimAll
-            await sleep(15000)
-            console.log("=======================================================")
-            console.log("vesting info:", vestingInfor)
-            console.log("=======================================================")
-            console.log("vesting info:", timeWithDraws)
-            console.log("=======================================================")
-            console.log("start time:", Date.now()/ 1000)
-            console.log("=======================================================")
-            const transaction = await vestingContract
-                                    .claim(
-                                        vestingInfor.wallet, 
-                                        vestingInfor.vestingId, 
-                                        vestingInfor.lastClaim, 
-                                        vestingInfor.schemeId, 
-                                        true)
-            const txData = await transaction.wait()
-            const event = txData.events[1].args
-            console.log("=======================================================")
-            console.log("event : ",event)
-            console.log("=======================================================")
-            expect(event.blockTime).to.above(ethers.BigNumber.from(timeWithDraws[2]))
-            // console.log("transaction: ", transaction)
-    })
+    // it("should claim token", async () => {
+    //     //address _wallet, uint256 _vestingId, uint256 _schemeDetailId, uint256 _schemeId, bool isClaimAll
+    //         await sleep(15000)
+    //         console.log("=======================================================")
+    //         console.log("vesting info:", vestingInfor)
+    //         console.log("=======================================================")
+    //         console.log("vesting info:", timeWithDraws)
+    //         console.log("=======================================================")
+    //         console.log("start time:", Date.now()/ 1000)
+    //         console.log("=======================================================")
+    //         const transaction = await vestingContract
+    //                                 .claim(
+    //                                     vestingInfor.wallet, 
+    //                                     vestingInfor.vestingId, 
+    //                                     vestingInfor.lastClaim, 
+    //                                     vestingInfor.schemeId, 
+    //                                     true)
+    //         const txData = await transaction.wait()
+    //         const event = txData.events[1].args
+    //         console.log("=======================================================")
+    //         console.log("event : ",event)
+    //         console.log("=======================================================")
+    //         expect(event.blockTime).to.above(ethers.BigNumber.from(timeWithDraws[2]))
+    //         // console.log("transaction: ", transaction)
+    // })
     
 })

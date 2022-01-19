@@ -22,61 +22,68 @@ contract Vesting is
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _vestingIds;
     CountersUpgradeable.Counter private _schemeIds;
-    CountersUpgradeable.Counter private _schemeDetailIds;
 
     struct VestingInformation {
-        uint256 maxSupplyClaim;
-        uint256 lastClaimId;
+        string name;
+        address wallet;
         uint256 schemeId;
         uint256 startTime;
-        address wallet;
+        uint256 totalAmount;
+        uint256 vestedAmount;
+        uint256 totalClaimed;
+        uint256 periodAmount;
+        // 0: inactive, 1: active, 2: completed
+        uint8 status;
     }
     
     struct SchemeInformation {
-        uint256 timeClaim;
+        string name;
+        uint256 vestTime;
+        uint256 cliffTime;
         uint256 durationTime;
+        uint256 periodTime;
         address tokenAddress;
     }
 
-    struct SchemeDetail {
-        uint numerator;
-        uint denominator;
-        uint timeWithDraw;
-    }
-
+    // @dev get vestingInformation by index
     mapping(uint256 => VestingInformation) vestingInfors;
+    // @dev get vestingInformations list by wallet
+    mapping(address => uint256[]) walletToVestingInfor;
+    // @dev get schemeInfo by index
     mapping(uint256 => SchemeInformation) schemeInfos;
-    mapping(uint256 => mapping(uint256 => SchemeDetail)) schemeDetails;
 
-
-    uint256[] ids;
-
+    // @dev declare variables for role
     address public preventiveWallet;
     mapping(address => bool) private _operators;
     address[] public listOperators;
 
+    // @dev create vesting event
     event NewVestingInformation(
+        string name,
+        address wallet,
+        uint256 vestingId,
         uint256 schemeId,
         uint256 amountDeposit,
-        address wallet,
-        uint256 maxSupplyClaim,
-        bool status,
-        uint256 lastClaimId,
-        uint256 vestingId
+        uint256 totalSupply,
+        uint256 vestedAmount,
+        uint256 startTime,
+        uint256 periodAmount,
+        uint8 status
     );
     
+    // @dev create scheme event
     event NewSchemeInformation(
-        uint256 schemeId,
+        string name,
         address tokenAddress,
+        uint256 vestingId,
+        uint256 cliffTime,
+        uint256 vestTime,
         uint256 durationTime,
-        uint256 timeClaim
+        uint256 periodTime
     );
 
-    event AddToken(
-        uint256 amount,
-        uint256 startTime
-    );
-    event Claim(address wallet, uint256 amount, uint256 blockTime);
+    event AddToken(uint256 amount);
+    event Claim(address wallet, uint256 amount);
     event EmergencyWithdraw(address preventiveWallet, uint256 amount);
     event PreventiveWallet(address preventiveWallet);
     event Operator(address operator, bool isOperator);
@@ -138,150 +145,129 @@ contract Vesting is
         emit Operator(operator, isOperator);
     }
 
-    function addToken(
-        uint256 _amount, 
-        uint256 _vestingId, 
-        address _walletAddress, 
-        address _tokenAddress,
-        uint[] memory _numerators,
-        uint[] memory _denominators,
-        uint[] memory _timeWithDraws
-        ) public onlyOperator {
-        VestingInformation storage vest = vestingInfors[_vestingId];
-        SchemeInformation memory scheme = schemeInfos[vest.schemeId];
-        require(vest.maxSupplyClaim != uint256(0), "vesting information not found!");
-        require(
-            _amount == vest.maxSupplyClaim,
-            "amount-deposit-must-equal-max-supply-claim"
-        );
-        vest.startTime = block.timestamp;
-        
-        addMutilRound(_vestingId, scheme.timeClaim, _numerators, _denominators, _timeWithDraws);
+    //@dev add token from admin to contract
+    function addToken(uint256 _amount, address _wallet, address _tokenAddress) public onlyOperator {
         IERC20Upgradeable(_tokenAddress).safeTransferFrom(
-            _walletAddress,
+            _wallet,
             address(this),
             _amount
         );
+        emit AddToken(_amount);
     }
 
     function newSchemeInformation(
+        string memory name,
+        uint256 vestTime,
+        uint256 cliffTime,
         uint256 durationTime,
-        uint32 timeClaim,
         address tokenAddress
     ) public onlyOperator {
-        require(_validate(0, 1));
+        require(vestTime > 0, "time claim must be greater than 0");
+        require(cliffTime > 0, "time claim must be greater than 0");
+        require(durationTime > 0, "time claim invalid");
+        require(tokenAddress != address(0), "tokenAddress invalid");
+        require(bytes(name).length > 0, "scheme name is required");
         _schemeIds.increment();
         uint256 id = _schemeIds.current();
         SchemeInformation storage schemeInfo = schemeInfos[id];
-        schemeInfo.durationTime = durationTime;
         schemeInfo.tokenAddress = tokenAddress;
-        schemeInfo.timeClaim = timeClaim;
+        schemeInfo.name = name;
+        schemeInfo.vestTime = vestTime;
+        schemeInfo.cliffTime = cliffTime;
+        schemeInfo.durationTime = durationTime;
+        schemeInfo.periodTime = durationTime.div((cliffTime.add(vestTime)));
         emit NewSchemeInformation(
-            id,
+            name,
             schemeInfo.tokenAddress, 
+            id,
+            schemeInfo.cliffTime,
+            schemeInfo.vestTime,
             schemeInfo.durationTime,
-            schemeInfo.timeClaim
+            schemeInfo.periodTime
         );
-    }
-
-    function addMutilRound(
-        uint256 _vestingId,
-        uint256 _count,
-        uint[] memory _numerators,
-        uint[] memory _denominators,
-        uint[] memory _timeWithDraws
-    ) public onlyOperator{
-        for(uint256 i = 0; i < _count; i ++) {
-            _addRound(_vestingId ,_numerators[i], _denominators[i], _timeWithDraws[i]);
-        }
-    }
-
-    function _addRound(uint256 _vestingId ,uint _numerator, uint _denominator, uint _timeWithDraw) internal{
-        require(_validate(_vestingId, 0), "vesting not found");
-        _schemeDetailIds.increment();
-        SchemeDetail storage schemeDetail = schemeDetails[_vestingId][_schemeDetailIds.current()];
-        schemeDetail.numerator = _numerator;
-        schemeDetail.denominator = _denominator;
-        schemeDetail.timeWithDraw = _timeWithDraw;
-    }
-
-    function _validate(uint256 _vestingId, uint8 _type) internal view returns(bool) {
-        if(_type == 0) {
-            if(vestingInfors[_vestingId].maxSupplyClaim <= 0 ) {
-                return false;
-            }
-        } else if (_type == 1) {
-
-        } else {
-
-        }
-        return true;
     }
 
     function newVestingInformation(
         address wallet,
-        uint256 maxSupplyClaim,
+        string memory name,
+        uint256 totalAmount,
         uint256 amountDeposit,
+        uint256 totalClaimed,
         uint256 schemeId,
-        uint256 lastClaimId,
-        uint[] memory _numerators,
-        uint[] memory _denominators,
-        uint[] memory _timeWithDraws
+        uint256 startTime,
+        uint256 vestedAmount,
+        uint256 periodAmount
     ) public onlyOperator {
         SchemeInformation storage schemeInfo = schemeInfos[schemeId];
-        require(wallet != address(0), "wallet not found");
-        require(maxSupplyClaim > 0, "maxSupplyClaim must be greater than 0");
+        require(wallet != address(0), "wallet is required");
+        require(totalClaimed > 0, "maxSupplyClaim must be greater than 0");
         require(schemeId > 0, "schemeId invalid");
         require(schemeInfo.durationTime > 0, "scheme not found");
+        require(bytes(name).length > 0, "vesting name is required");
+        require(startTime > 0, "startTime is required");
+        require(vestedAmount > 0, "vestedAmount must be greater than 0");
+        require(periodAmount > 0, "vestedAmount must be greater than 0");
+        require(totalAmount > 0, "vestedAmount must be greater than 0");
 
         _vestingIds.increment();
         VestingInformation storage vestingInfo = vestingInfors[_vestingIds.current()];
-        vestingInfo.maxSupplyClaim = maxSupplyClaim;
+        walletToVestingInfor[msg.sender].push(_vestingIds.current());
+        vestingInfo.totalAmount = totalAmount;
+        vestingInfo.name = name;
         vestingInfo.wallet = wallet;
         vestingInfo.schemeId = schemeId;
-        vestingInfo.lastClaimId = lastClaimId;
+        vestingInfo.startTime = startTime;
+        vestingInfo.vestedAmount = vestedAmount;
+        vestingInfo.periodAmount = periodAmount;
+        vestingInfo.totalClaimed = totalClaimed;
+        vestingInfo.periodAmount = periodAmount;
         if(amountDeposit > 0) {
-            addToken(amountDeposit, _vestingIds.current(), wallet, schemeInfo.tokenAddress, _numerators, _denominators, _timeWithDraws);
+            addToken(amountDeposit, msg.sender, schemeInfo.tokenAddress);
         }
-        bool status = false;
+        vestingInfo.status = 0;
         if(vestingInfo.startTime > 0) {
-            status = true;
+            vestingInfo.status = 1;
         }
-        emit NewVestingInformation(schemeId, amountDeposit, wallet, maxSupplyClaim, status, lastClaimId, _vestingIds.current());
+        emit NewVestingInformation(
+            name, 
+            wallet, 
+            _vestingIds.current(), 
+            schemeId, 
+            amountDeposit, 
+            totalAmount,
+            vestedAmount,
+            startTime,
+            periodAmount,
+            vestingInfo.status
+        );
     }
 
-    function claim(address _wallet, uint256 _vestingId, uint256 _schemeDetailId, uint256 _schemeId, bool isClaimAll) public nonReentrant whenNotPaused {
+    function claim(address _wallet, bool _isClaimAll, uint256 _vestingId) public nonReentrant whenNotPaused {
         require(!msg.sender.isContract(), "caller-invalid");
         
-        VestingInformation storage vestingInfo = vestingInfors[_vestingId];
-        SchemeInformation storage schemeInfo = schemeInfos[_schemeId];
-        require(vestingInfo.schemeId > 0, "vesting info not found");
         uint256 withdrawable = 0;
-        if(!isClaimAll) {
-            SchemeDetail storage schemeDetail = schemeDetails[_schemeId][_schemeDetailId]; 
-            if(block.timestamp > schemeDetail.timeWithDraw) {
-                withdrawable = vestingInfo.maxSupplyClaim
-                                    .mul(schemeDetail.numerator)
-                                    .div(schemeDetail.denominator);
-                require(IERC20Upgradeable(schemeInfo.tokenAddress).balanceOf(address(this)) > withdrawable, "contract dont have enough token to transfer");
-                IERC20Upgradeable(schemeInfo.tokenAddress).transfer(_wallet, withdrawable);
-                vestingInfo.lastClaimId = _schemeDetailId;
-            }
+        
+        if(_isClaimAll) {
+            
         } else {
-            for(uint i = vestingInfo.lastClaimId;i < schemeInfo.timeClaim ; i++) {
-                SchemeDetail storage schemeDetail = schemeDetails[_schemeId][i.add(1)]; 
-                if(schemeDetail.timeWithDraw > block.timestamp) {
-                    vestingInfo.lastClaimId = i;
-                    break;
-                }
-                withdrawable = withdrawable.add(vestingInfo.maxSupplyClaim
-                                    .mul(schemeDetail.numerator)
-                                    .div(schemeDetail.denominator));
+            VestingInformation storage vestingInfo = vestingInfors[_vestingId];
+            SchemeInformation memory schemeInfo = schemeInfos[vestingInfo.schemeId];
+            uint256 totalTime = schemeInfo.cliffTime.add(schemeInfo.vestTime);
+            
+            for(uint i = 0; i < totalTime; i++) {
+                
+                require(vestingInfo.startTime.add(schemeInfo.periodTime) > block.timestamp, "not in time");
             }
-            require(IERC20Upgradeable(schemeInfo.tokenAddress).balanceOf(address(this)) > withdrawable, "contract dont have enough token to transfer");
-            IERC20Upgradeable(schemeInfo.tokenAddress).transfer(_wallet, withdrawable);
+
         }
-        emit Claim(_wallet, withdrawable, block.timestamp);
+
+        // require(IERC20Upgradeable(schemeInfo.tokenAddress).balanceOf(address(this)) > withdrawable, "contract dont have enough token to transfer");
+        // IERC20Upgradeable(schemeInfo.tokenAddress).transfer(_wallet, withdrawable);
+        // emit Claim(_wallet, withdrawable);
+    }
+
+    function _getAmountCanClaim() internal returns(uint256) {
+        
     }
 
     function getListOperators() public view returns (address[] memory) {
