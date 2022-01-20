@@ -70,7 +70,7 @@ contract Vesting is
     event NewSchemeInformation(
         string name,
         address tokenAddress,
-        uint256 vestingId,
+        uint256 schemeId,
         uint256 cliffTime,
         uint256 vestTime,
         uint256 durationTime,
@@ -252,7 +252,7 @@ contract Vesting is
         cliffTime = schemeInfo.cliffTime;
     }
 
-    function claim(address _wallet, uint256[] memory _vestingIdsList, address tokenAddress) public nonReentrant whenNotPaused {
+    function claim(uint256[] memory _vestingIdsList, address tokenAddress) public nonReentrant whenNotPaused {
         require(!msg.sender.isContract(), "caller-invalid");
         
         uint256 withdrawable = 0;
@@ -282,10 +282,10 @@ contract Vesting is
         }
         require(IERC20Upgradeable(tokenAddress).balanceOf(address(this)) >= withdrawable, "contract dont have enough token to transfer");
         if(withdrawable != 0) {
-            IERC20Upgradeable(tokenAddress).transfer(_wallet, withdrawable);
+            IERC20Upgradeable(tokenAddress).transfer(msg.sender, withdrawable);
         }
         
-        emit Claim(_wallet, withdrawable, vestIdsList);
+        emit Claim(msg.sender, withdrawable, vestIdsList);
     }
 
     function _getAmountCanClaim(uint256 _vestingId) internal view returns(uint256) {
