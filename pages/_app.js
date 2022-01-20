@@ -38,19 +38,14 @@ function MyApp({ Component, pageProps }) {
 
   const handleInit = async () => {
     const web3Modal = new Web3Modal()
-    const { ethereum } = window
     if (web3Modal) {
-      const provider = await web3Modal.connect()
-      console.log('provider: ', provider)
-      // const web3 = new Web3(ethereum)
-      // console.log('web3: ',web3)
-      // const raribleSdk = createRaribleSdk(new Web3Ethereum({ web3 }), "rinkeby")
-      // setRaribleSDK(raribleSdk)
-      console.log('rarible: ', raribleSDK)
-      setProvider(provider)
-      setWeb3Provider(new ethers.providers.Web3Provider(provider))
+      const connection = await web3Modal.connect()
+      console.log('provider: ', connection)
+      setProvider(connection)
+      const web3provider = new ethers.providers.Web3Provider(connection)
+      setWeb3Provider(web3provider)
       console.log("_app-web3Provider: ", web3Provider)
-      provider.on("accountsChanged",(accounts) => {
+      connection.on("accountsChanged",(accounts) => {
         setAccounts(accounts)
       })
     } else {

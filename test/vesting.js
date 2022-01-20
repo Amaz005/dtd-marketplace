@@ -22,9 +22,23 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function countTime(num) {
+    return num * 30 * 60 * 60
+}
+
 function convertTime(ms) {
     return parseInt((Date.now() + ms)/1000)
 }
+
+const scheme = {
+    name: "scheme 1",
+    vestTime: 2,
+    cliffTime: 2,
+    durationTime: 100,
+    periodTime: 25,
+    tokenAddress: Erc20Contract.address
+}
+
 describe("vesting", function() {
     before("Vesting -deploy contract",async function() {
         [owner, user1, user2, user3, user4, user5, user6, user7, user8, user9] = await ethers.getSigners()
@@ -45,30 +59,57 @@ describe("vesting", function() {
         Erc20Contract.approve(vestingContract.address, vestingInfor.maxSupplyClaim)
     })
     it("Should create scheme", async function() {
-        let durationTime = convertTime(15000)
-        console.log("durationTime: ", durationTime)
-        durationTime = ethers.utils.parseUnits(durationTime.toString(),"wei")
-
-        const schemeCreate = await vestingContract
-            .newSchemeInformation(
-                durationTime, 
-                timeClaim, 
-                Erc20Contract.address
-            )
-        let dataTx = await schemeCreate.wait()
-        let result = dataTx.events[0].args
-
-        // console.log('success: ')
-        // console.log(result)
-        vestingInfor.schemeId = result.schemeId
-        vestingInfor.wallet = owner.address
-        vestingInfor.amountDeposit = "1000"
+        // string memory name,
+        // uint256 vestTime,
+        // uint256 cliffTime,
+        // uint256 durationTime,
+        // uint256 periodTime,
+        // address tokenAddress
+        let isSuccess = false;
+        const scheme = {
+            name: "scheme 1",
+            vestTime: 2,
+            cliffTime: 2,
+            durationTime: 100,
+            periodTime: 25,
+            tokenAddress: Erc20Contract.address
+        }
+        try {
+            const transaction = await vestingContract.newSchemeInformation(
+                                                        scheme.name, 
+                                                        scheme.vestTime, 
+                                                        scheme.cliffTime, 
+                                                        scheme.durationTime,
+                                                        scheme.periodTime,
+                                                        scheme.tokenAddress
+                                                    )
+            const txData = await transaction.wait()
+            const event = txData.events[0]
+            console.log("return event "+ i + ": ",event)
+            isSuccess =  true
+        }catch (e) {
+            console.log(e)
+            isSuccess = false
+        }
+        expect(isSuccess).to.true
     })
     it("should create new Vesting information", async () => {
         
+        // address wallet,
+        // uint256 totalAmount,
+        // uint256 amountDeposit,
+        // uint256 totalClaimed,
+        // uint256 schemeId,
+        // uint256 startTime
+        const vest = {
+            wallet: user1.address,
+            totalAmount: 1000,
+            schemeId
+        }
+
         const transaction = await vestingContract
                                     .newVestingInformation(
-                                        owner.address, 
+                                        user1.address, 
                                         vestingInfor.maxSupplyClaim, 
                                         vestingInfor.amountDeposit, 
                                         vestingInfor.schemeId, 
