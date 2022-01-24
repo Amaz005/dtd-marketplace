@@ -34,11 +34,16 @@ async function main() {
   const verify = await Verify.deploy()
   await verify.deployed()
 
-  await dtoken.transfer(swap.address, '1000000000000')
+  // await dtoken.transfer(swap.address, '1000000000000')
+
+  const Vesting = await ethers.getContractFactory("Vesting")
+  const vesting = await upgrades.deployProxy(Vesting, [accounts[0].address], {kind: "uups"})
+  await vesting.deployed()
 
   console.log("tokenAddress: " ,dtoken.address)
   console.log("walletAddress: " ,swap.address)
   console.log("verifyAddress: ", verify.address)
+  console.log("vestingAddress: ", vesting.address)
 
   let config = `
     export const nftMarketAddress = "${nftMarket.address}"
@@ -46,6 +51,7 @@ async function main() {
     export const tokenAddress = "${dtoken.address}"
     export const walletAddress = "${swap.address}"
     export const verifyAddress = "${verify.address}"
+    export const vestingAddress = "${vesting.address}"
   `
   let data = JSON.stringify(config)
   fs.writeFileSync('config.js', JSON.parse(data))

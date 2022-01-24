@@ -2,8 +2,9 @@ import {ethers} from 'ethers';
 import { useFormik } from 'formik';
 import * as Yup from 'yup'
 import {tokenAddress,vestingAddress} from '../config'
-import {useEffect} from 'react'
+import {useState,useEffect} from 'react'
 import Vesting from '../artifacts/contracts/Vesting.sol/Vesting.json'
+import Navbar from '../components/Navbar'
 
 let scheme = {
     schemeId: 0,
@@ -27,9 +28,9 @@ let vest = {
 const countTime = (num, type) => {
     switch(type) {
         case 0 : 
-            return num * 30*24*60*60
-        case 1: 
             return num * 7*24*60*60
+        case 1: 
+            return num * 30*24*60*60
         default :
             return num * 30*24*60*60
     }
@@ -49,14 +50,14 @@ export default function createScheme({ provider, web3Provider}) {
             vestTime: 0,
             cliffTime: 0,
             durationTime: 0,
-            periodTime: 0,
-            type: 0,
-            tokenAddress: tokenAddress
+            type: "",
+            tokenAddress: ""
         },
         validationSchema: Yup.object(
             {}
         ),
         onSubmit: async (values) => {
+            console.log("values: ",values)
             await handlerSubmitScheme(values)
         }
     })
@@ -82,13 +83,34 @@ export default function createScheme({ provider, web3Provider}) {
             return null
         }
 
-        
         const durationOfCliff = countTime(values.cliffTime, values.type)
         const durationTime = countTime(values.vestTime, values.type)
         const periodTime = Math.round(durationTime/values.vestTime)
-        console.log("web3provider: ",web3Provider)
+        console.log("durationOfCliff: ", durationOfCliff)
+        console.log("durationTime: ", durationTime)
+        console.log("period time: ", periodTime)
         const signer = web3Provider.getSigner();
+        console.log("web3Provider: ", web3Provider)
         const vestingContract = new ethers.Contract(vestingAddress,Vesting.abi, signer)
+        // string memory name,
+        // uint256 vestTime,
+        // uint256 cliffTime,
+        // uint256 durationTime,
+        // uint256 periodTime,
+        // address tokenAddress
+        console.log(1)
+        const object  = {
+            1: values.name, 
+            2: values.vestTime, 
+            3: durationOfCliff, 
+            4: durationTime,
+            5: periodTime,
+            6: values.tokenAddress
+        }
+        console.log("values: ", object)
+        const id = ethers.BigNumber.from(1)
+        const schemeValue = await vestingContract.getSchemeInforById(id)
+        console.log("schemeValues: ", schemeValue)
         const transaction = await vestingContract.newSchemeInformation(
             values.name, 
             values.vestTime, 
@@ -136,8 +158,13 @@ export default function createScheme({ provider, web3Provider}) {
                 className="btn btn-light"
                 onClick={(event) => {
                     setIsSell(false)
-                    formik.setFieldValue('amount3',0)
-                    formik.setFieldValue('address',"")
+                    formik.setFieldValue('name',"")
+                    formik.setFieldValue('vestTime',0)
+                    formik.setFieldValue('cliffTime',0)
+                    formik.setFieldValue('durationTime',"")
+                    formik.setFieldValue('periodTime',0)
+                    formik.setFieldValue('type',0)
+                    formik.setFieldValue('tokenAddress',tokenAddress)
                 }}
                 >
                 scheme
@@ -183,7 +210,7 @@ export default function createScheme({ provider, web3Provider}) {
                     <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="tokenAddress">
                         Token
                     </label>
-                    <select class="form-select appearance-none
+                    <select className="form-select appearance-none
                         block
                         w-full
                         px-3
@@ -199,9 +226,11 @@ export default function createScheme({ provider, web3Provider}) {
                         m-0
                         focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
                         name="tokenAddress" id="tokenAddress" value={schemeFormik.values.tokenAddress}
+                        onChange={schemeFormik.handleChange}
+                        onBlur={schemeFormik.handleBlur}
                         >
-                            <option selected>Open this select menu</option>
-                            <option value={schemeFormik.values.tokenAddress}>DTK</option>
+                            <option defaultValue>Open this select menu</option>
+                            <option value={tokenAddress}>DTK</option>
                         </select>
                     {schemeFormik.errors.tokenAddress && schemeFormik.touched.tokenAddress && (
                         <p className="error-message">{schemeFormik.errors.tokenAddress}</p>
@@ -243,9 +272,9 @@ export default function createScheme({ provider, web3Provider}) {
                 </div>
                 <div className="mb-4">
                     <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="type">
-                        Token
+                        type
                     </label>
-                    <select class="form-select appearance-none
+                    <select className="form-select appearance-none
                         block
                         w-full
                         px-3
@@ -264,7 +293,7 @@ export default function createScheme({ provider, web3Provider}) {
                         onChange={schemeFormik.handleChange}
                         onBlur={schemeFormik.handleBlur}
                         >
-                            <option selected>Open this select menu</option>
+                            <option defaultValue>Open this select menu</option>
                             <option value={0}>week</option>
                             <option value={1}>month</option>
                         </select>
@@ -285,7 +314,7 @@ export default function createScheme({ provider, web3Provider}) {
                     onSubmit={vestFormik.handleSubmit}
                     className="bg-white mt-5 px-8 pt-6 pb-8 mb-4 rounded border"
                 >
-                    <div className="mb-4">
+                    {/* <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="eth">
                             DTK
                         </label>
@@ -326,7 +355,7 @@ export default function createScheme({ provider, web3Provider}) {
                         disabled={vestFormik.isSubmitting}
                         className="font-bold mt-4 bg-gray-500 text-white rounded p-4 shadow-lg">
                         Create vesting
-                    </button>
+                    </button> */}
                 </form>
             
             }

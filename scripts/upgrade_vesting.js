@@ -1,10 +1,9 @@
-const { ethers, upgrades } = require("hardhat");
-const fs = require('fs');
-const {vestingAddress} = require('../vestingConfig')
+const { ethers, upgrades } = require("hardhat")
+const fs = require('fs')
 async function main() {
     //upgrades
     const VestingV2 = await ethers.getContractFactory("Vesting")
-    const vestingV2 = await upgrades.upgradeProxy(vestingAddress, NFTMarketV2)
+    const vestingV2 = await upgrades.upgradeProxy("0x3d175AF4F7167406389af09D26E94751702f16FF", VestingV2)
     
 }
 

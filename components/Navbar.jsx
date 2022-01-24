@@ -153,8 +153,13 @@ const Navbar = ({isLoading,provider,web3Provider}) => {
                     </a>
                 </Link>
                 <Link href="/sign-message">
-                    <a className="block mt-4 lg:inline-block lg:mt-0 text-gray-400 hover:text-white hover:underline ">
+                    <a className="block mt-4 lg:inline-block lg:mt-0 text-gray-400 hover:text-white hover:underline mr-4">
                         Sign message
+                    </a>
+                </Link>
+                <Link href="/create-scheme">
+                    <a className="block mt-4 lg:inline-block lg:mt-0 text-gray-400 hover:text-white hover:underline ">
+                        Create scheme
                     </a>
                 </Link>
                 </div>

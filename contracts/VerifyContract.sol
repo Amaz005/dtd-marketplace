@@ -55,7 +55,7 @@ contract VerifyContract is EIP712{
         address owner,
         uint deadline,
         Content calldata content
-    ) external {
+    ) external returns(address _signer){
         bytes32 hashStruct = _hashTypedDataV4(keccak256(
             abi.encode(
                 keccak256("set(address sender,Content content,uint deadline)Content(string name,string description)"),
@@ -64,7 +64,7 @@ contract VerifyContract is EIP712{
                 deadline
             )
         ));
-        address _signer = ECDSA.recover(hashStruct, signature);
+        _signer = ECDSA.recover(hashStruct, signature);
         setSign(_signer);
         setHashStruct(hashStruct);
         require(_signer == owner, "MyFunction: invalid signature");

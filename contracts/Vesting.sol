@@ -46,6 +46,8 @@ contract Vesting is
     mapping(uint256 => VestingInformation) vestingInfors;
     // @dev get vestingInformations list by wallet
     mapping(address => uint256[]) walletToVestingInfor;
+    // @dev get vesting id by schemeId
+    mapping(uint256 => uint256[]) schemeIdToVestingInfors;
     // @dev get schemeInfo by index
     mapping(uint256 => SchemeInformation) schemeInfos;
 
@@ -57,8 +59,8 @@ contract Vesting is
     // @dev create vesting event
     event NewVestingInformation(
         address wallet,
-        uint256 vestingId,
-        uint256 schemeId,
+        uint256 vestingBcId,
+        uint256 schemeBcId,
         uint256 amountDeposit,
         uint256 totalAmount,
         uint256 totalClaimed,
@@ -70,7 +72,7 @@ contract Vesting is
     event NewSchemeInformation(
         string name,
         address tokenAddress,
-        uint256 schemeId,
+        uint256 schemeBcId,
         uint256 cliffTime,
         uint256 vestTime,
         uint256 durationTime,
@@ -141,13 +143,16 @@ contract Vesting is
     }
 
     //@dev add token from admin to contract
-    function addToken(uint256 _amount, address _wallet, address _tokenAddress, uint256 _vestingId) public onlyOperator {
+    function addToken(uint256 _amount, uint256 _vestingId) public onlyOperator {
+
         VestingInformation memory vestingInfo = vestingInfors[_vestingId];
+        SchemeInformation memory schemeInfo = schemeInfos[vestingInfo.schemeId];
+        require(_amount == (vestingInfo.totalAmount - vestingInfo.totalClaimed), "amount-invalid");
         if(vestingInfo.status == 0) {
             vestingInfo.status = 1;
         }
-        IERC20Upgradeable(_tokenAddress).safeTransferFrom(
-            _wallet,
+        IERC20Upgradeable(schemeInfo.tokenAddress).safeTransferFrom(
+            msg.sender,
             address(this),
             _amount
         );
@@ -162,11 +167,12 @@ contract Vesting is
         uint256 periodTime,
         address tokenAddress
     ) public onlyOperator {
-        require(vestTime > 0, "time claim must be greater than 0");
-        require(cliffTime > 0, "time claim must be greater than 0");
-        require(durationTime > 0, "time claim invalid");
-        require(tokenAddress != address(0), "tokenAddress invalid");
-        require(bytes(name).length > 0, "scheme name is required");
+        require(vestTime > 0, "vest-claim-invalid");
+        require(cliffTime >= 0, "cliff-claim-invalid");
+        require(durationTime > 0, "duration-time-invalid");
+        require(tokenAddress != address(0), "tokenAddress-invalid");
+        require(bytes(name).length > 0, "scheme-name-invalid");
+        require(durationTime > periodTime, "duration-time-invalid");
         _schemeIds.increment();
         uint256 id = _schemeIds.current();
         SchemeInformation storage schemeInfo = schemeInfos[id];
@@ -196,29 +202,27 @@ contract Vesting is
         uint256 startTime
     ) public onlyOperator {
         SchemeInformation storage schemeInfo = schemeInfos[schemeId];
-        require(wallet != address(0), "wallet is required");
-        require(totalClaimed > 0, "maxSupplyClaim must be greater than 0");
-        require(schemeId > 0, "schemeId invalid");
-        require(schemeInfo.durationTime > 0, "scheme not found");
-        require(startTime > 0, "startTime is required");
-        require(totalAmount > 0, "totalAmount must be greater than 0");
+        require(schemeId > 0, "schemeId-invalid");
+        require(schemeInfo.durationTime > 0, "scheme-invalid");
+        require(wallet != address(0), "wallet-invalid");
+        require(startTime > 0, "startTime-invalid");
+        require(totalAmount > 0, "totalAmount-invalid");
+        require(totalAmount > totalClaimed, "totalAmount-invalid");
 
         _vestingIds.increment();
         VestingInformation storage vestingInfo = vestingInfors[_vestingIds.current()];
         walletToVestingInfor[msg.sender].push(_vestingIds.current());
+        schemeIdToVestingInfors[schemeId].push(_vestingIds.current());
         vestingInfo.totalAmount = totalAmount;
         vestingInfo.wallet = wallet;
         vestingInfo.schemeId = schemeId;
         // @dev get duration of cliff time
-        uint256 durationOfCliff = schemeInfo.periodTime * schemeInfo.cliffTime;
 
-        vestingInfo.startTime = startTime + durationOfCliff;
+        vestingInfo.startTime = startTime + schemeInfo.cliffTime;
         vestingInfo.totalClaimed = totalClaimed;
-        if(amountDeposit > 0) {
-            addToken(amountDeposit, msg.sender, schemeInfo.tokenAddress, _vestingIds.current());
-        }
         vestingInfo.status = 0;
-        if(vestingInfo.startTime > 0) {
+        if(amountDeposit > 0) {
+            addToken(amountDeposit, _vestingIds.current());
             vestingInfo.status = 1;
         }
         emit NewVestingInformation(
@@ -270,22 +274,53 @@ contract Vesting is
         uint256[] memory vestIdsList = new uint256[](countVestId);
         uint256 count = 0;
         for (uint256 i = 0; i < vestIdsList.length; i++) {
-            if(vestingInfors[_vestingIdsList[i]].status == 1 && vestingInfors[_vestingIdsList[i]].wallet == msg.sender) {
+            VestingInformation storage vestingInfo = vestingInfors[_vestingIdsList[i]];
+            if(vestingInfo.status == 1 && vestingInfo.wallet == msg.sender) {
                 withdrawable = withdrawable.add(_getAmountCanClaim(_vestingIdsList[i]));
-                vestingInfors[_vestingIdsList[i]].totalClaimed = vestingInfors[_vestingIdsList[i]].totalClaimed.add(withdrawable);
+                vestingInfo.totalClaimed = vestingInfo.totalClaimed.add(withdrawable);
                 vestIdsList[count] = _vestingIdsList[i];
+
                 count++;
             }
-            if(vestingInfors[_vestingIdsList[i]].totalClaimed == vestingInfors[_vestingIdsList[i]].totalAmount) {
-                vestingInfors[_vestingIdsList[i]].status = 2;
+            if(vestingInfo.totalClaimed == vestingInfo.totalAmount) {
+                vestingInfo.status = 2;
             }
         }
-        require(IERC20Upgradeable(tokenAddress).balanceOf(address(this)) >= withdrawable, "contract dont have enough token to transfer");
+        require(IERC20Upgradeable(tokenAddress).balanceOf(address(this)) >= withdrawable, "contract-dont-have-enough-token-to-transfer");
         if(withdrawable != 0) {
             IERC20Upgradeable(tokenAddress).transfer(msg.sender, withdrawable);
         }
         
         emit Claim(msg.sender, withdrawable, vestIdsList);
+    }
+
+    function getWithdrawableByIds(uint256[] memory _vestingIdsList) public view returns(uint256[] memory withdrawables) {
+        for(uint256 i = 0; i < _vestingIdsList.length; i++) {
+            withdrawables[i] = _getAmountCanClaim(_vestingIdsList[i]);
+        }
+    }
+
+    function getAmountsOfScheme(uint[] memory _schemeIdsList) 
+        public 
+        view 
+        returns(
+            uint256[] memory totalAmount, 
+            uint256[] memory remainAmount) {
+            if(_schemeIdsList.length <= 0) {
+                return (totalAmount,totalAmount);
+            }
+            
+            for (uint256 i = 0; i < _schemeIdsList.length; i++) {
+                uint256 schemeId = _schemeIdsList[i];
+                uint256[] memory vestingIds = schemeIdToVestingInfors[schemeId];
+                totalAmount[i] = 0;
+                remainAmount[i] = 0;
+                for (uint256 j = 0; j < vestingIds.length; j++) {
+                    VestingInformation memory vestingInfo = vestingInfors[vestingIds[j]];
+                    totalAmount[i] = vestingInfo.totalAmount + totalAmount[i];
+                    remainAmount[i] = remainAmount[i] - (_getAmountCanClaim(vestingIds[j]) + vestingInfo.totalClaimed);
+                }
+            }
     }
 
     function _getAmountCanClaim(uint256 _vestingId) internal view returns(uint256) {
@@ -297,9 +332,12 @@ contract Vesting is
             if (vestingInfo.totalClaimed == vestingInfo.totalAmount) {
                 return 0;
             }
-            withdrawable = (vestingInfo.totalAmount * (block.timestamp - vestingInfo.startTime)/schemeInfo.durationTime) - vestingInfo.totalClaimed;
+            uint256 timeFromStart = block.timestamp - vestingInfo.startTime;
+            uint256 vestedSlicePeriods = timeFromStart/schemeInfo.periodTime;
+            uint256 vestedSeconds = vestedSlicePeriods*schemeInfo.periodTime;
+            withdrawable = (vestingInfo.totalAmount * vestedSeconds/schemeInfo.durationTime) - vestingInfo.totalClaimed;
         
-        } else if (block.timestamp > endTime) {
+        } else if (block.timestamp >= endTime) {
             withdrawable = vestingInfo.totalAmount.sub(vestingInfo.totalClaimed);
         }
         return withdrawable;
