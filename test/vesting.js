@@ -75,10 +75,10 @@ describe("vesting", function() {
         let isSuccess = false;
         scheme = {
             name: "lương nhân đức",
-            vestTime: 11,
-            cliffTime: 2592000,
-            durationTime: 28512000,
-            periodTime: 2592000,
+            vestTime: 2,
+            cliffTime: 1,
+            durationTime: 10,
+            periodTime: 5,
             tokenAddress: Erc20Contract.address
         }
         try {
@@ -92,7 +92,6 @@ describe("vesting", function() {
                                                     )
             const txData = await transaction.wait()
             const event = txData.events[0].args
-            console.log("return event "+ 0 + ": ",event)
             scheme.schemeId = event.schemeBcId
             isSuccess =  true
         }catch (e) {
@@ -105,10 +104,10 @@ describe("vesting", function() {
         vest = {
             wallet: user1.address,
             totalAmount: BigInt(1000* 10**18),
-            amountDeposit: BigInt(900* 10**18),
+            amountDeposit: 0,
             totalClaimed: BigInt(100* 10**18),
             schemeId: scheme.schemeId,
-            startTime: Date.now()
+            startTime: parseInt(Date.now()/1000)
         }
         const transaction = await vestingContract
                                     .newVestingInformation(
@@ -120,20 +119,26 @@ describe("vesting", function() {
                                         vest.startTime
                                     )
         const txData = await transaction.wait()
-        
-        const event = txData.events[3].args
-        console.log('vesting event: ', event)
+            
+        const event = txData.events[0].args
         vest.vestingId = event.vestingBcId
 
-
-        
         vestingIds.push(event.vestingBcId)
+    })
+    it("should add token", async () => {
+        const transaction = await vestingContract
+                                    .addToken(
+                                        BigInt(900* 10**18), 
+                                        vest.vestingId,
+                                    )
+        const txData = await transaction.wait()
+        const event = txData.events[2].args
+        console.log("event: ",event)
+
     })
     // it("should claim token", async () => {
     //     //address _wallet, uint256 _vestingId, uint256 _schemeDetailId, uint256 _schemeId, bool isClaimAll
-        
-    //     console.log("vest: ",vest)
-    //     console.log("scheme: ",scheme)
+    
     //     await sleep(15000)
     //     const transaction = await vestingContract
     //                             .claim(

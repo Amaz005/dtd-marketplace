@@ -9,12 +9,12 @@ async function main() {
     const Token = await ethers.getContractFactory("DToken")
     const dtoken = await Token.deploy("1000000000000")
     await dtoken.deployed()
-    const Vesting = await ethers.getContractFactory("Vesting")
-    const vesting = await upgrades.deployProxy(Vesting, [owner.address], {kind: "uups"})
-    await vesting.deployed()
+    // const Vesting = await ethers.getContractFactory("Vesting")
+    // const vesting = await upgrades.deployProxy(Vesting, [owner.address], {kind: "uups"})
+    // await vesting.deployed()
 
-    console.log("vesting: ", vesting.address)
-    console.log("implementation address:", await hre.upgrades.erc1967.getImplementationAddress(vesting.address));
+    // console.log("vesting: ", vesting.address)
+    // console.log("implementation address:", await hre.upgrades.erc1967.getImplementationAddress(vesting.address));
     let config = `
     export const tokenAddress = "${dtoken.address}"
     export const vestingAddress = "${vesting.address}"
