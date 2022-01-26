@@ -102,8 +102,8 @@ describe("vesting", function() {
     })
     it("should create new Vesting information", async () => {
         vest = {
-            wallet: user1.address,
-            totalAmount: BigInt(1000* 10**18),
+            wallet: owner.address,
+            totalAmount: BigInt(1005* 10**18),
             amountDeposit: 0,
             totalClaimed: BigInt(100* 10**18),
             schemeId: scheme.schemeId,
@@ -128,7 +128,7 @@ describe("vesting", function() {
     it("should add token", async () => {
         const transaction = await vestingContract
                                     .addToken(
-                                        BigInt(900* 10**18), 
+                                        BigInt(905* 10**18), 
                                         vest.vestingId,
                                     )
         const txData = await transaction.wait()
@@ -136,19 +136,25 @@ describe("vesting", function() {
         console.log("event: ",event)
 
     })
-    // it("should claim token", async () => {
-    //     //address _wallet, uint256 _vestingId, uint256 _schemeDetailId, uint256 _schemeId, bool isClaimAll
+    it("return vesting info", async () => {
+        const transaction = await vestingContract.getVestingInforById(vest.vestingId)
+        // const txData = await transaction.wait()
+        console.log("txData: ",transaction)
+    })
+    it("should claim token", async () => {
+        //address _wallet, uint256 _vestingId, uint256 _schemeDetailId, uint256 _schemeId, bool isClaimAll
     
-    //     await sleep(15000)
-    //     const transaction = await vestingContract
-    //                             .claim(
-    //                                 vestingIds, 
-    //                                 scheme.tokenAddress)
-    //     const txData = await transaction.wait()
-    //     for(let i = 0; i < txData.events.length; i++){
-    //         const event = txData.events[i]
-    //         console.log("claim event: ", event)
-    //     }
-    // })
+        await sleep(15000)
+        const transaction = await vestingContract
+                                .claim(
+                                    vestingIds, 
+                                    scheme.tokenAddress)
+        const txData = await transaction.wait()
+        for(let i = 0; i < txData.events.length; i++){
+            const event = txData.events[i]
+        }
+        const event = txData.events[1].args.vestingIds
+        console.log("event: ",event)
+    })
     
 })

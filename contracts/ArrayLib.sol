@@ -19,6 +19,11 @@ library ArrayLib {
         }
     }
 
+    function divRound(uint256 _num) internal pure returns (uint256 result) {
+        result = _num/10**13;
+        result = (result*10**13);
+    }
+
     function checkExistsInArray(uint256[] memory _arr, uint256 _uint)
         internal
         pure
