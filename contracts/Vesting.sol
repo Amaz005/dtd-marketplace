@@ -334,7 +334,9 @@ contract Vesting is
             if (withdrawable > vestingInfo.totalClaimed) {
                 withdrawable = withdrawable - vestingInfo.totalClaimed;
             }
+            console.log("withdrawable: %s", withdrawable);
             ArrayLib.divRound(withdrawable);
+            
         } else if (block.timestamp >= endTime) {
             console.log("now > endTime");
             withdrawable = vestingInfo.totalAmount.sub(vestingInfo.totalClaimed);

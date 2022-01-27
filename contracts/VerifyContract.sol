@@ -102,7 +102,7 @@ contract VerifyContract is EIP712{
 
         bytes32 hashStruct = keccak256(
         abi.encode(
-            keccak256("set(address sender,string content,uint deadline)"),
+            keccak256("abc(string content)"),
             sender,
             keccak256(bytes(x)),
             deadline

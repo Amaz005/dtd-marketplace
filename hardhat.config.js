@@ -4,6 +4,7 @@ require('@nomiclabs/hardhat-etherscan')
 require("@nomiclabs/hardhat-ganache")
 require("hardhat-gas-reporter")
 require('dotenv').config()
+
 const fs = require('fs')
 const privateKey = fs.readFileSync(".secret").toString().trim() || "01234567890123456789"
 const infuraId = fs.readFileSync(".infuraid").toString().trim() || ""
@@ -34,6 +35,11 @@ module.exports = {
       optimizer: {
         enabled: true,
         runs: 200
+      },
+      outputSelection: {
+        "*": {
+          "*": ["storageLayout"]
+        }
       }
     }
   }

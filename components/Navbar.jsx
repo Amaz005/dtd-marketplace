@@ -37,30 +37,35 @@ const Navbar = ({isLoading,provider,web3Provider}) => {
         console.log("call test")
         const signer = web3Provider.getSigner()
         const owner = await signer.getAddress()
-        const vestingContract = new ethers.Contract("0x0d302e592ce1255C4Dbe74D577810c04dfb5dD2a",Vesting.abi, signer)
-        const tokenContract = new ethers.Contract("0xbF1dE3589aaCfe1857F467D502E1cD8D2c36A8a6", DToken.abi, signer)
-        // tokenContract.transfer(owner, "10000000000")
-        try {
-            // const schemeName = "scheme 1"
-            let durationTime = Date.now() + 1000000
-            durationTime = ethers.utils.parseUnits(durationTime.toString(),"wei")
+        const vestingContract = new ethers.Contract("0xA869cE2b36dDc56E0F4d0C53734D4708bb3B9a2e",Vesting.abi, signer)
+        const tokenContract = new ethers.Contract("0x5d8f9CA73DDdbEFc291b47b201cb2B86D985c088", DToken.abi, signer)
+        const totalSupply = await tokenContract.totalSupply()
+        console.log("totalSupply",totalSupply.toString()) 
+        // await tokenContract.transfer(owner, BigInt(1000000000000))
+        // await tokenContract.approve("0x9fBC983D154f965668006c785598209d1BD80Efa", BigInt(1000000000000))
+        const amount = await tokenContract.allowance(owner,"0xA869cE2b36dDc56E0F4d0C53734D4708bb3B9a2e")
+        console.log("amount: ",amount.toString())
+        // try {
+        //     // const schemeName = "scheme 1"
+        //     let durationTime = Date.now() + 1000000
+        //     durationTime = ethers.utils.parseUnits(durationTime.toString(),"wei")
     
-            const timeClaim = 3
-            console.log("owner: ", owner)
-            const schemeCreate = await vestingContract
-                .newSchemeInformation(
-                    durationTime, 
-                    timeClaim, 
-                    "0xbF1dE3589aaCfe1857F467D502E1cD8D2c36A8a6"
-                )
-            let dataTx = await schemeCreate.wait()
-            let result = dataTx.events[0]?.args
+        //     const timeClaim = 3
+        //     console.log("owner: ", owner)
+        //     const schemeCreate = await vestingContract
+        //         .newSchemeInformation(
+        //             durationTime, 
+        //             timeClaim, 
+        //             "0xbF1dE3589aaCfe1857F467D502E1cD8D2c36A8a6"
+        //         )
+        //     let dataTx = await schemeCreate.wait()
+        //     let result = dataTx.events[0]?.args
     
-            console.log('success: ')
-            console.log(dataTx)
-        } catch(e) {
-            console.log(e)
-        }
+        //     console.log('success: ')
+        //     console.log(dataTx)
+        // } catch(e) {
+        //     console.log(e)
+        // }
     }
 
     const handleApprove = async () => {

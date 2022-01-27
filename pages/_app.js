@@ -12,25 +12,19 @@ import { Web3Ethereum } from "@rarible/web3-ethereum"
 import Web3 from 'web3'
 import { AppProps } from 'next/dist/next-server/lib/router/router'
 
-interface options {
-  position:string,
-  timeout:number,
-  offset:string,
-  transition: string
+const options = {
+  position: positions.TOP_CENTER,
+  timeout: 5000,
+  offset: '30px',
+  transition: transitions.FADE
 }
 
-function MyApp({ Component, pageProps }: AppProps) {
-  const [provider, setProvider] = useState<any>()
-  const [accounts, setAccounts] = useState<string[]>([])
-  const [web3Provider, setWeb3Provider] = useState<any>()
-  const [raribleSDK, setRaribleSDK] = useState<RaribleSdk>()
-  const [options, ] = useState<options>({
-      position= positions.TOP_CENTER,
-      timeout= 5000,
-      offset= '30px',
-      transition= transitions.FADE
-    }
-  )
+function MyApp({ Component, pageProps }) {
+  const [provider, setProvider] = useState()
+  const [accounts, setAccounts] = useState([])
+  const [web3Provider, setWeb3Provider] = useState()
+  const [raribleSDK, setRaribleSDK] = useState()
+  
   useEffect(() => {
       handleInit();
   }, []);
@@ -63,13 +57,13 @@ function MyApp({ Component, pageProps }: AppProps) {
   const blockchainProps = { ...pageProps, provider, accounts, web3Provider, raribleSDK };
   return (
       <AlertProvider >
-      //   <div>
-      //     <Head>
-      //       <link rel="shortcut icon" href="./_next/static/image/public/duck-logo.3e5e8e138e5b5350fbc43676b1bc035b.svg" />
-      //     </Head>
+          <div>
+            <Head>
+              <link rel="shortcut icon" href="./_next/static/image/public/duck-logo.3e5e8e138e5b5350fbc43676b1bc035b.svg" />
+            </Head>
           
-      //     <Component {...blockchainProps} />
-      //   </div>
+            <Component {...blockchainProps} />
+        </div>
       </AlertProvider>
 
       

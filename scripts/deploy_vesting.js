@@ -17,7 +17,6 @@ async function main() {
     // console.log("implementation address:", await hre.upgrades.erc1967.getImplementationAddress(vesting.address));
     let config = `
     export const tokenAddress = "${dtoken.address}"
-    export const vestingAddress = "${vesting.address}"
   `
   let data = JSON.stringify(config)
   fs.writeFileSync('vestingConfig.js', JSON.parse(data))

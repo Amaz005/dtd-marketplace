@@ -36,7 +36,7 @@ const countTime = (num, type) => {
     }
 }
 
-export default function createScheme({ provider, web3Provider}) {
+export default function CreateScheme({ provider, web3Provider}) {
 
     const [loadToken, setLoadToken] = useState(false)
     const [isSell, setIsSell] = useState(false)

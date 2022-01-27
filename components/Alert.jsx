@@ -3,6 +3,7 @@ import InfoIcon from "../public/icons/InfoIcon";
 import SuccessIcon from "../public/icons/SuccessIcon";
 import ErrorIcon from "../public/icons/ErrorIcon";
 import CloseIcon from "../public/icons/CloseIcon";
+import { AlertComponentPropsWithStyle } from "react-alert";
 
 const buttonStyle = {
     marginLeft: "20px",
@@ -13,7 +14,8 @@ const buttonStyle = {
 };
 
 
-const Alert = ({message, options, style, close}) => {
+const Alert = (props) => {
+    const { style, options, message, close } = props
     if (!options) {
         return <></>;
     }

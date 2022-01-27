@@ -30,20 +30,15 @@ export default function SignMessage() {
         }
         const msgParams = JSON.stringify({types:
             {
+
             EIP712Domain:[
                 {name:"name",type:"string"},
                 {name:"version",type:"string"},
                 {name:"chainId",type:"uint256"},
                 {name:"verifyingContract",type:"address"}
             ],
-            set:[
-                {name:"sender",type:"address"},
-                {name:"content",type:"Content"},
-                {name:"deadline", type:"uint"}
-            ],
-            Content:[
-                {name:"name",type:"string"},
-                {name:"description",type:"string"}
+            abc:[
+                {name:"content",type:"string"},
             ]
             },
             primaryType:"set",
@@ -56,19 +51,11 @@ export default function SignMessage() {
         })
         const types = {
             set:[
-                {name:"sender",type:"address"},
-                {name:"content",type:"Content"},
-                {name:"deadline", type:"uint"}
-            ],
-            Content:[
-                {name:"name",type:"string"},
-                {name:"description",type:"string"}
+                {name:"content",type:"string"},
             ]
         }
         const mail = {
-            sender: myAccount,
-            content: object,
-            deadline: deadline
+            content: x,
         }
         const domain = {
             name:"SetTest",version:"1", chainId: value,verifyingContract: verifyAddress
