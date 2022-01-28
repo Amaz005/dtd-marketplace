@@ -1,11 +1,6 @@
 import { useEffect, useState} from 'react'
 import {useRouter} from 'next/router'
 import Image from 'next/image'
-import {
-    generateTokenId,
-    createLazyMint,
-    putLazyMint,
-} from '../util/rarible/raribleRequests';
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import Navbar from '../components/Navbar.jsx'
@@ -18,10 +13,13 @@ import {
 import {uploadToIPFS} from '../util/ipfs'
 import {readFileSync, showFile} from '../util/readFileSync'
 import axios from 'axios'
+import { NftCollectionType } from "@rarible/ethereum-api-client/build/models/NftCollection"
+import { NftCollectionFeatures, NftItem } from "@rarible/ethereum-api-client"
+import debounce from "../util/debounce"
 
 const mintFormInitial = {
     id: assetAddresses[currentNetwork].address,
-    type: `ERC721`,
+    type: NftCollectionType.ERC721,
     isLazy: true,
     isLazySupported: true,
     loading: false,
@@ -94,34 +92,139 @@ export default function CreateItem({accounts, provider, web3Provider, raribleSDK
         };
         
         const fullObjectHash = await uploadToIPFS(JSON.stringify(json));
-        const newTokenId = await generateTokenId(collection.id, accounts[0]);
-        setTokenId(newTokenId);
-
-        const form = await createLazyMint(
-            newTokenId,
-            provider,
-            collection.id,
-            accounts[0],
-            fullObjectHash,
-            { account: accounts[0], value: data.royalties },
-        );
-
-        await putLazyMint(form);
-        await handleGetMyNfts(accounts[0])
+        const nftCollection = await sdk.apis.nftCollection.getNftCollectionById({ collection: collection.id })
+        const resp = await sdk.nft.mint({
+            collection: nftCollection,
+            uri: `ipfs://ipfs/${fullObjectHash}`,
+            creators: [{ account: toAddress(accounts[0]), value: 10000 }],
+            royalties: [],
+            lazy: collection.isLazy,
+        })
+        setTokenId(resp.tokenId);
+        if (tokenId) {
+			/**
+			 * Get minted nft through SDK
+			 */
+			if (collection.isLazySupported && !collection.isLazy) {
+				await retry(30, async () => { // wait when indexer aggregate an onChain nft
+						await getTokenById(tokenId)
+					},
+				)
+			} else {
+				await getTokenById(tokenId)
+			}
+		}
     }
 
-    const handleGetMyNfts = async (owner) => {
-        const { data } = await axios.get(
-            `${assetAddresses[currentNetwork].domain}/v0.1/nft/items/byOwner`,
-            {
-                    params: {
-                    owner,
-                },
-            },
-        );
-    
-        console.log(data.items);
-    };
+    const getTokenById = async (tokenId) => {
+		const token = await sdk.apis.nftItem.getNftItemById({ itemId: `${collection.id}:${tokenId}` })
+		if (token) {
+			setCreateOrderForm({
+				...createOrderForm,
+				contract: token.contract,
+				tokenId: token.tokenId,
+			})
+		}
+	}
+
+    /**
+	 * Create sell order from minted nft
+	 */
+	const createSellOrder = async () => {
+		if (createOrderForm.contract && createOrderForm.tokenId && createOrderForm.price) {
+			const request = {
+				makeAssetType: {
+					assetClass: collection.type,
+					contract: toAddress(createOrderForm.contract),
+					tokenId: toBigNumber(createOrderForm.tokenId),
+				},
+				amount: 1,
+				maker: toAddress(accounts[0]),
+				originFees: [],
+				payouts: [],
+				price: createOrderForm.price,
+				takeAssetType: { assetClass: "ETH" },
+			}
+			// Create an order
+			const resultOrder = await sdk.order.sell(request)
+			if (resultOrder) {
+				setPurchaseOrderForm({ ...purchaseOrderForm, hash: resultOrder.hash })
+			}
+		}
+	}
+
+	/**
+	 * Buy order
+	 */
+	const handlePurchaseOrder = async () => {
+		const order = await sdk.apis.order.getOrderByHash({ hash: purchaseOrderForm.hash })
+		switch (order.type) {
+			case "RARIBLE_V1":
+				await sdk.order.buy({ order, amount: parseInt(purchaseOrderForm.amount), originFee: 0 })
+				break;
+			case "RARIBLE_V2":
+				await sdk.order.buy({ order, amount: parseInt(purchaseOrderForm.amount) })
+				break;
+			case "OPEN_SEA_V1":
+				await sdk.order.buy({ order, amount: parseInt(purchaseOrderForm.amount) })
+				break;
+			default:
+				throw new Error(`Unsupported order : ${JSON.stringify(order)}`)
+		}
+	}
+
+	/**
+	 * Handle get NFT's owned by connected wallet
+	 */
+	const handleGetMyNfts = async () => {
+		const items = await sdk.apis.nftItem.getNftItemsByOwner({ owner: accounts[0] })
+		setOwnedItems(items?.items)
+	}
+
+	/**
+	 * debounce function for define collection type by collection id(contract address)
+	 */
+	const searchType = debounce(async (collectionAddress) => {
+		if (collectionAddress) {
+			setCollection(prevState => ({ ...prevState, loading: true }))
+			const collectionResponse = await sdk.apis.nftCollection.getNftCollectionById({ collection: collectionAddress })
+			setCollection(prevState => ({
+				...prevState,
+				type: collectionResponse.type,
+				isLazySupported: collectionResponse.features.includes(NftCollectionFeatures.MINT_AND_TRANSFER), // check if it supports lazy minting
+				loading: false,
+			}))
+		}
+	}, 500)
+
+	/**
+	 * input handlers
+	 */
+	const handleChangeCollection = async (e) => {
+		const value = e.currentTarget.value
+		setCollection(prevState => ({ ...prevState, id: value }))
+		if (value) {
+			await searchType(value)
+		}
+	}
+	const handleChangeLazy = () => {
+		setCollection(prevState => ({ ...prevState, isLazy: !prevState.isLazy }))
+	}
+	const handleChangeOrderContract = (e) => {
+		setCreateOrderForm({ ...createOrderForm, contract: e.currentTarget.value })
+	}
+	const handleChangeOrderTokenId = (e) => {
+		setCreateOrderForm({ ...createOrderForm, tokenId: e.currentTarget.value })
+	}
+	const handleChangeOrderPrice = (e) => {
+		setCreateOrderForm({ ...createOrderForm, price: e.currentTarget.value })
+	}
+	const handleOrderHash = (e) => {
+		setPurchaseOrderForm({ ...purchaseOrderForm, hash: e.currentTarget.value })
+	}
+	const handlePurchaseOrderAmount = (e) => {
+		setPurchaseOrderForm({ ...createOrderForm, amount: e.currentTarget.value })
+	}
 
     return ( 
     <>

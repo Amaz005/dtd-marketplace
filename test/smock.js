@@ -1,6 +1,5 @@
-const { expect } = require("chai");
-const { smoddit, smockit } = require("@eth-optimism/smock");
-const { BigNumber } = require("ethers");
+const { expect } = require("chai")
+const { FakeContract, smock } = require('@defi-wonderland/smock')
 
 describe("My ERC20 and other contract", function () {
 	let myERC20;
@@ -13,29 +12,15 @@ describe("My ERC20 and other contract", function () {
 
 	it("call mint up in my ERC20", async function () {
         [owner, user1, user2, user3, user4, user5, user6, user7, user8, user9] = await ethers.getSigners()
-		const MyMockContract = await smockit(myERC20);
-		const MyOtherContract = await ethers.getContractFactory(
-			"MyOtherContract"
-		);
-		const myOtherContract = await MyOtherContract.deploy(
-			MyMockContract.address
-		);
+		const myOtherContract = await ethers.getContractFactory("MyOtherContract")
 
-		const mockedMintAmount = 30;
-		MyMockContract.smocked.mintUpTo
-                    .will.return.with(mockedMintAmount);
+		//@dev init with contract factory
+		const myFake = await smock.fake(myOtherContract)
+		
+		// myOtherContract.connect(myFake.wallet)
 
-		const to = owner.address;
-		const amount = 100;
+		const defaultValue = await myFake.getValues.returns(42)
+		console.log("defaultValue: ",defaultValue)
 
-		await myOtherContract.myOtherFunction(to, amount);
-
-		expect(MyMockContract.smocked.mintUpTo.calls.length)
-                    .to.be.equal(1);
-		expect(MyMockContract.smocked.mintUpTo.calls[0].to)
-                    .to.be.equals(to);
-		expect(
-			MyMockContract.smocked.mintUpTo.calls[0].amount.toString()
-		).to.equal(amount.toString());
 	});
 });

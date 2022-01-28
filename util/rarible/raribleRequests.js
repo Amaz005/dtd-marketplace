@@ -62,6 +62,7 @@ export async function createLazyMint(
 }
 
 export async function putLazyMint(form) {
+  
   const raribleMintUrl = `${assetAddresses[currentNetwork].domain}/v0.1/nft/mints`
   //for robsten ${apiDomain}/v0.1/nft-order/mints
   //https://ethereum-api-staging.rarible.org/v0.1/nft/mints

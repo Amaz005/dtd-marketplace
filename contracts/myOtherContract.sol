@@ -20,4 +20,8 @@ contract MyOtherContract {
 
     // do more stuff
     }
+
+    function getValues() public pure returns(uint256) {
+        return 200;
+    }
 }

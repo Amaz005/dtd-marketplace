@@ -41,7 +41,16 @@ function MyApp({ Component, pageProps }) {
     const web3Modal = new Web3Modal()
     if (web3Modal) {
       const connection = await web3Modal.connect()
+      const web = new Web3(connection)
+      const web3Ethereum = new Web3Ethereum({ web3: web })
+      console.log("web3Ethereum: ", web3Ethereum)
+      console.log("1")
+      const env = "rinkeby" // "e2e" | "ropsten" | "rinkeby" | "mainnet"
+      const raribleSdk = new createRaribleSdk(web3Ethereum, env)
+      console.log("2")
+      console.log("raribleSdk: ",raribleSdk)
       console.log('provider: ', connection)
+      setRaribleSDK(raribleSdk)
       setProvider(connection)
       const web3provider = new ethers.providers.Web3Provider(connection)
       setWeb3Provider(web3provider)
@@ -56,7 +65,7 @@ function MyApp({ Component, pageProps }) {
 
   const blockchainProps = { ...pageProps, provider, accounts, web3Provider, raribleSDK };
   return (
-      <AlertProvider >
+      <AlertProvider template={Alert} {...options}>
           <div>
             <Head>
               <link rel="shortcut icon" href="./_next/static/image/public/duck-logo.3e5e8e138e5b5350fbc43676b1bc035b.svg" />
