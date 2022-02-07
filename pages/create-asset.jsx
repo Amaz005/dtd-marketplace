@@ -16,6 +16,7 @@ import axios from 'axios'
 import { NftCollectionType } from "@rarible/ethereum-api-client/build/models/NftCollection"
 import { NftCollectionFeatures, NftItem } from "@rarible/ethereum-api-client"
 import debounce from "../util/debounce"
+import { toAddress, toBigNumber } from "@rarible/types"
 
 const mintFormInitial = {
     id: assetAddresses[currentNetwork].address,
@@ -31,6 +32,12 @@ export default function CreateItem({accounts, provider, web3Provider, raribleSDK
     const [loading, setLoading] = useState(false)
     const [tokenId, setTokenId] = useState('');
     const [collection, setCollection] = useState(mintFormInitial)
+    const [createOrderForm, setCreateOrderForm] = useState({
+		contract: '',
+		tokenId: '',
+		price: '10',
+		hash: '',
+	})
 
     const router = useRouter()
     const alert = useAlert()
@@ -68,6 +75,7 @@ export default function CreateItem({accounts, provider, web3Provider, raribleSDK
     const onChange = async (e) => {
         const fileToUpload = e.target.files[0]
         setFileToUpload(fileToUpload)
+        console.log("Filename: ", fileToUpload.name)
         const fileToShow = await showFile(fileToUpload)
         setFileURI(fileToShow)
     }
@@ -78,28 +86,33 @@ export default function CreateItem({accounts, provider, web3Provider, raribleSDK
         if (!fileAsArrayBuffer || !accounts[0]) {
             return null
         }
-
-        const url = `https://ipfs.infura.io/ipfs/${ipfsImagePath}`
-        const res = await axios.get(url)
-        const correctImageUrl = res.request?.responseURL
-        setFileURI(url)
+        console.log("ipfsImagePath: ", ipfsImagePath)
+        console.log(`image uri: https://ipfs.io/ipfs/${ipfsImagePath}?filename=${fileURI.name}`)
         const json = {
-            description: data.description || ``,
             name: data.assetName,
-            image: correctImageUrl,
+            description: data.description || ``,
+            image: `https://ipfs.io/ipfs/${ipfsImagePath}?filename=${fileURI.name}`,
+            external_url: "",
             attributes: [],
-            external_url: ``,
         };
         
-        const fullObjectHash = await uploadToIPFS(JSON.stringify(json));
-        const nftCollection = await sdk.apis.nftCollection.getNftCollectionById({ collection: collection.id })
-        const resp = await sdk.nft.mint({
+        const fullObjectHash = await uploadToIPFS(JSON.stringify(json))
+        console.log("====================================")
+        console.log("fullObjectHash: ", fullObjectHash)
+        console.log("====================================")
+        console.log("current account: ", accounts[0])
+        const nftCollection = await raribleSDK.apis.nftCollection.getNftCollectionById({ collection: collection.id })
+        const resp = await raribleSDK.nft.mint({
             collection: nftCollection,
             uri: `ipfs://ipfs/${fullObjectHash}`,
             creators: [{ account: toAddress(accounts[0]), value: 10000 }],
             royalties: [],
             lazy: collection.isLazy,
         })
+        console.log("====================================")
+        console.log("tokenId: ", resp.tokenId)
+        console.log("====================================")
+        
         setTokenId(resp.tokenId);
         if (tokenId) {
 			/**
@@ -117,7 +130,8 @@ export default function CreateItem({accounts, provider, web3Provider, raribleSDK
     }
 
     const getTokenById = async (tokenId) => {
-		const token = await sdk.apis.nftItem.getNftItemById({ itemId: `${collection.id}:${tokenId}` })
+		const token = await raribleSDK.apis.nftItem.getNftItemById({ itemId: `${collection.id}:${tokenId}` })
+        console.log("createOrderForm: ", createOrderForm)
 		if (token) {
 			setCreateOrderForm({
 				...createOrderForm,
@@ -146,7 +160,7 @@ export default function CreateItem({accounts, provider, web3Provider, raribleSDK
 				takeAssetType: { assetClass: "ETH" },
 			}
 			// Create an order
-			const resultOrder = await sdk.order.sell(request)
+			const resultOrder = await raribleSDK.order.sell(request)
 			if (resultOrder) {
 				setPurchaseOrderForm({ ...purchaseOrderForm, hash: resultOrder.hash })
 			}
@@ -157,16 +171,16 @@ export default function CreateItem({accounts, provider, web3Provider, raribleSDK
 	 * Buy order
 	 */
 	const handlePurchaseOrder = async () => {
-		const order = await sdk.apis.order.getOrderByHash({ hash: purchaseOrderForm.hash })
+		const order = await raribleSDK.apis.order.getOrderByHash({ hash: purchaseOrderForm.hash })
 		switch (order.type) {
 			case "RARIBLE_V1":
-				await sdk.order.buy({ order, amount: parseInt(purchaseOrderForm.amount), originFee: 0 })
+				await raribleSDK.order.buy({ order, amount: parseInt(purchaseOrderForm.amount), originFee: 0 })
 				break;
 			case "RARIBLE_V2":
-				await sdk.order.buy({ order, amount: parseInt(purchaseOrderForm.amount) })
+				await raribleSDK.order.buy({ order, amount: parseInt(purchaseOrderForm.amount) })
 				break;
 			case "OPEN_SEA_V1":
-				await sdk.order.buy({ order, amount: parseInt(purchaseOrderForm.amount) })
+				await raribleSDK.order.buy({ order, amount: parseInt(purchaseOrderForm.amount) })
 				break;
 			default:
 				throw new Error(`Unsupported order : ${JSON.stringify(order)}`)
@@ -177,25 +191,25 @@ export default function CreateItem({accounts, provider, web3Provider, raribleSDK
 	 * Handle get NFT's owned by connected wallet
 	 */
 	const handleGetMyNfts = async () => {
-		const items = await sdk.apis.nftItem.getNftItemsByOwner({ owner: accounts[0] })
+		const items = await raribleSDK.apis.nftItem.getNftItemsByOwner({ owner: accounts[0] })
 		setOwnedItems(items?.items)
 	}
 
-	/**
-	 * debounce function for define collection type by collection id(contract address)
-	 */
-	const searchType = debounce(async (collectionAddress) => {
-		if (collectionAddress) {
-			setCollection(prevState => ({ ...prevState, loading: true }))
-			const collectionResponse = await sdk.apis.nftCollection.getNftCollectionById({ collection: collectionAddress })
-			setCollection(prevState => ({
-				...prevState,
-				type: collectionResponse.type,
-				isLazySupported: collectionResponse.features.includes(NftCollectionFeatures.MINT_AND_TRANSFER), // check if it supports lazy minting
-				loading: false,
-			}))
-		}
-	}, 500)
+	// /**
+	//  * debounce function for define collection type by collection id(contract address)
+	//  */
+	// const searchType = debounce(async (collectionAddress) => {
+	// 	if (collectionAddress) {
+	// 		setCollection(prevState => ({ ...prevState, loading: true }))
+	// 		const collectionResponse = await sdk.apis.nftCollection.getNftCollectionById({ collection: collectionAddress })
+	// 		setCollection(prevState => ({
+	// 			...prevState,
+	// 			type: collectionResponse.type,
+	// 			isLazySupported: collectionResponse.features.includes(NftCollectionFeatures.MINT_AND_TRANSFER), // check if it supports lazy minting
+	// 			loading: false,
+	// 		}))
+	// 	}
+	// }, 500)
 
 	/**
 	 * input handlers
