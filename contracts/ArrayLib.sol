@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 /**
  * @dev Collection of functions related to the array type
  */
+import "hardhat/console.sol";
+
 library ArrayLib {
 
     function checkExistsInArray(address[] memory _arr, address _address)
@@ -18,6 +20,24 @@ library ArrayLib {
             }
         }
     }
+
+    function divRoundV2(uint256 a) internal pure returns (uint256) {
+        // kiem tra so du khi chia 10**13. Neu lon hon 5 *10**12 khi chia xong thi lam tron len(+1) roi nhan lai voi 10**13
+        //con nho hon thi giu nguyen va nhan lai voi 10**13
+        
+        uint256 tmp = a / 10**8;
+        uint256 tmpv2 = tmp * 10**8;
+        uint256 tm;
+        
+        if (tmpv2 < a) {
+            tm = a / 10**8 + 1;
+        } else {
+            tm = a / 10**8;
+        }
+        uint256 rouding = tm;
+        return rouding;
+    }
+
 
     function divRound(uint256 _num) internal pure returns (uint256 result) {
         result = _num/10**13;

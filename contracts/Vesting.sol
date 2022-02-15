@@ -32,6 +32,8 @@ contract Vesting is
         uint256 totalClaimed;
         // @dev 0: inactive, 1: active, 2: completed
         uint8 status;
+        uint256 numberClaim;
+        uint256 periodTime;
     }
     
     struct SchemeInformation {
@@ -68,7 +70,10 @@ contract Vesting is
         uint256 totalAmount,
         uint256 totalClaimed,
         uint256 startTime,
-        uint8 status
+        uint8 status,
+        uint256 durationTime,
+        uint256 periodTime,
+        uint256 numberClaim
     );
     
     // @dev create scheme event
@@ -198,9 +203,12 @@ contract Vesting is
         uint256 amountDeposit,
         uint256 totalClaimed,
         uint256 schemeId,
-        uint256 startTime
+        uint256 startTime,
+        uint256 tokenRelease,
+        bool isTesting
     ) public onlyOperator {
         SchemeInformation storage schemeInfo = schemeInfos[schemeId];
+
         require(schemeId > 0, "schemeId-invalid");
         require(schemeInfo.durationTime > 0, "scheme-invalid");
         require(wallet != address(0), "wallet-invalid");
@@ -218,9 +226,15 @@ contract Vesting is
 
         vestingInfo.startTime = startTime + schemeInfo.cliffTime;
         vestingInfo.totalClaimed = totalClaimed;
-        vestingInfo.status = 1;
+        if(!isTesting) {
+            (vestingInfo.numberClaim, vestingInfo.periodTime) = _computePeriodTime(tokenRelease, schemeId);
+        } else {
+            (vestingInfo.numberClaim, vestingInfo.periodTime) = _computePeriodTimeTest(tokenRelease, schemeId);
+        }
+        vestingInfo.status = 0;
         if(amountDeposit > 0) {
             addToken(amountDeposit, _vestingIds.current());
+            vestingInfo.status = 1;
         }
         emit NewVestingInformation(
             wallet, 
@@ -229,13 +243,100 @@ contract Vesting is
             amountDeposit, 
             totalAmount,
             vestingInfo.totalClaimed,
-            vestingInfo.startTime,
-            vestingInfo.status
+            startTime,
+            vestingInfo.status,
+            schemeInfo.durationTime,
+            vestingInfo.periodTime,
+            vestingInfo.numberClaim
         );
     }
 
     function getListVestIdsByWallet(address _wallet) public view returns(uint256[] memory) {
         return walletToVestingInfor[_wallet];
+    }
+
+    function _computePeriodTime(uint256 tokenRelease, uint256 schemeId) internal view returns(uint256, uint256) {
+        SchemeInformation memory schemeInfo = schemeInfos[schemeId];
+        
+        uint256 day = 24*60*60;
+        uint256 week = 7*24*60*60;
+        uint256 month = 30*24*60*60;
+        uint256 quater = 3*30*24*60*60;
+        uint256 year = 12*30*24*60*60;
+        uint256 durationCal = schemeInfo.durationTime*10**8;
+        uint256 numberClaim = 0;
+        uint256 periodTime = 0;
+        //@dev 0: days, 1:weeks, 2: months, 3: quaters, 4: years
+        if(tokenRelease == 0) {
+
+            numberClaim= durationCal/day;
+            periodTime = day;
+
+        } else if (tokenRelease == 1) {
+
+            numberClaim = ArrayLib.divRoundV2(durationCal/week);
+            periodTime = week;
+
+        } else if (tokenRelease == 2) {
+
+            numberClaim = ArrayLib.divRoundV2(durationCal/month);
+            periodTime = month;
+
+        } else if (tokenRelease == 3) {   
+
+            numberClaim = ArrayLib.divRoundV2(durationCal/quater);
+            periodTime = quater;
+            
+        } else {
+
+            numberClaim = ArrayLib.divRoundV2(durationCal/year);
+            periodTime = year;
+
+        }
+
+        return (numberClaim, periodTime);
+    }
+
+    function _computePeriodTimeTest(uint256 tokenRelease, uint256 schemeId) internal view returns(uint256, uint256){
+        SchemeInformation storage schemeInfo = schemeInfos[schemeId];
+
+        uint256 day = 60;
+        uint256 week = 7*60;
+        uint256 month = 30*60;
+        uint256 quater = 3*30*60;
+        uint256 year = 12*30*60;
+        uint256 durationCal = schemeInfo.durationTime*10**8;
+        uint256 numberClaim = 0;
+        uint256 periodTime = 0;
+        //@dev 0: days, 1:weeks, 2: months, 3: quaters, 4: years
+        if(tokenRelease == 0) {
+
+            numberClaim= schemeInfo.durationTime/day;
+            periodTime = day;
+
+        } else if (tokenRelease == 1) {
+
+            numberClaim = ArrayLib.divRoundV2(durationCal/week);
+            periodTime = week;
+
+        } else if (tokenRelease == 2) {
+
+            numberClaim = ArrayLib.divRoundV2(durationCal/month);
+            periodTime = month;
+
+        } else if (tokenRelease == 3) {   
+
+            numberClaim = ArrayLib.divRoundV2(durationCal/quater);
+            periodTime = quater;
+            
+        } else {
+
+            numberClaim = ArrayLib.divRoundV2(durationCal/year);
+            periodTime = year;
+
+        }
+
+        return (numberClaim, periodTime);
     }
 
     function getSchemeInforById(uint256 _schemeId) public view returns(

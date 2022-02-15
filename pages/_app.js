@@ -11,6 +11,7 @@ import { createRaribleSdk, RaribleSdk } from "@rarible/protocol-ethereum-sdk"
 import { Web3Ethereum } from "@rarible/web3-ethereum"
 import Web3 from 'web3'
 import { AppProps } from 'next/dist/next-server/lib/router/router'
+import WalletLink from 'walletlink'
 
 const options = {
   position: positions.TOP_CENTER,
@@ -18,6 +19,38 @@ const options = {
   offset: '30px',
   transition: transitions.FADE
 }
+
+// const providerOptions = {
+//   walletconnect: {
+//     package: WalletConnectProvider, // required
+//     options: {
+//       infuraId: INFURA_ID, // required
+//     },
+//   },
+//   'custom-walletlink': {
+//     display: {
+//       logo: 'https://play-lh.googleusercontent.com/PjoJoG27miSglVBXoXrxBSLveV6e3EeBPpNY55aiUUBM9Q1RCETKCOqdOkX2ZydqVf0',
+//       name: 'Coinbase',
+//       description: 'Connect to Coinbase Wallet (not Coinbase App)',
+//     },
+//     options: {
+//       appName: 'Coinbase', // Your app name
+//       networkUrl: `https://mainnet.infura.io/v3/${INFURA_ID}`,
+//       chainId: 1,
+//     },
+//     package: WalletLink,
+//     connector: async (_, options) => {
+//       const { appName, networkUrl, chainId } = options
+//       const walletLink = new WalletLink({
+//         appName,
+//       })
+//       const provider = walletLink.makeWeb3Provider(networkUrl, chainId)
+//       await provider.enable()
+//       return provider
+//     },
+//   },
+// }
+
 
 function MyApp({ Component, pageProps }) {
   const [provider, setProvider] = useState()

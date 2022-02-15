@@ -12,7 +12,6 @@ async function main() {
     // const Vesting = await ethers.getContractFactory("Vesting")
     // const vesting = await upgrades.deployProxy(Vesting, [owner.address], {kind: "uups"})
     // await vesting.deployed()
-
     // console.log("vesting: ", vesting.address)
     // console.log("implementation address:", await hre.upgrades.erc1967.getImplementationAddress(vesting.address));
     let config = `

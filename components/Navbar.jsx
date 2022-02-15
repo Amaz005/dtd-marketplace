@@ -11,7 +11,7 @@ import Vesting from '../artifacts/contracts/Vesting.sol/Vesting.json'
 const Navbar = ({isLoading,provider,web3Provider}) => {
     const [token, setToken] = useState(0)
     const alert = useAlert()
-
+    
     useEffect(() => {
         if(provider) {
             provider.on("accountsChanged",handleAccountsChanged)
@@ -29,43 +29,47 @@ const Navbar = ({isLoading,provider,web3Provider}) => {
         loadWeb3()
     }
 
-    const callTest = async () => {
-        console.log("web3Provider: ", web3Provider)
-        if(!web3Provider) {
-            return null
-        }
-        console.log("call test")
-        const signer = web3Provider.getSigner()
-        const owner = await signer.getAddress()
-        const vestingContract = new ethers.Contract("0xA869cE2b36dDc56E0F4d0C53734D4708bb3B9a2e",Vesting.abi, signer)
-        const tokenContract = new ethers.Contract("0x5d8f9CA73DDdbEFc291b47b201cb2B86D985c088", DToken.abi, signer)
-        const totalSupply = await tokenContract.totalSupply()
-        console.log("totalSupply",totalSupply.toString()) 
-        // await tokenContract.transfer(owner, BigInt(1000000000000))
-        // await tokenContract.approve("0x9fBC983D154f965668006c785598209d1BD80Efa", BigInt(1000000000000))
-        const amount = await tokenContract.allowance(owner,"0xA869cE2b36dDc56E0F4d0C53734D4708bb3B9a2e")
-        console.log("amount: ",amount.toString())
-        // try {
-        //     // const schemeName = "scheme 1"
-        //     let durationTime = Date.now() + 1000000
-        //     durationTime = ethers.utils.parseUnits(durationTime.toString(),"wei")
+    // const callTest = async () => {
+    //     console.log("web3Provider: ", web3Provider)
+    //     if(!web3Provider) {
+    //         return null
+    //     }
+    //     console.log("call test")
+    //     const signer = web3Provider.getSigner()
+    //     const owner = await signer.getAddress()
+    //     const vestingContract = new ethers.Contract("0xA869cE2b36dDc56E0F4d0C53734D4708bb3B9a2e",Vesting.abi, signer)
+    //     const tokenContract = new ethers.Contract("0x5d8f9CA73DDdbEFc291b47b201cb2B86D985c088", DToken.abi, signer)
+    //     const totalSupply = await tokenContract.totalSupply()
+    //     console.log("totalSupply",totalSupply.toString()) 
+    //     // await tokenContract.transfer(owner, BigInt(1000000000000))
+    //     // await tokenContract.approve("0x9fBC983D154f965668006c785598209d1BD80Efa", BigInt(1000000000000))
+    //     const amount = await tokenContract.allowance(owner,"0xA869cE2b36dDc56E0F4d0C53734D4708bb3B9a2e")
+    //     console.log("amount: ",amount.toString())
+    //     // try {
+    //     //     // const schemeName = "scheme 1"
+    //     //     let durationTime = Date.now() + 1000000
+    //     //     durationTime = ethers.utils.parseUnits(durationTime.toString(),"wei")
     
-        //     const timeClaim = 3
-        //     console.log("owner: ", owner)
-        //     const schemeCreate = await vestingContract
-        //         .newSchemeInformation(
-        //             durationTime, 
-        //             timeClaim, 
-        //             "0xbF1dE3589aaCfe1857F467D502E1cD8D2c36A8a6"
-        //         )
-        //     let dataTx = await schemeCreate.wait()
-        //     let result = dataTx.events[0]?.args
+    //     //     const timeClaim = 3
+    //     //     console.log("owner: ", owner)
+    //     //     const schemeCreate = await vestingContract
+    //     //         .newSchemeInformation(
+    //     //             durationTime, 
+    //     //             timeClaim, 
+    //     //             "0xbF1dE3589aaCfe1857F467D502E1cD8D2c36A8a6"
+    //     //         )
+    //     //     let dataTx = await schemeCreate.wait()
+    //     //     let result = dataTx.events[0]?.args
     
-        //     console.log('success: ')
-        //     console.log(dataTx)
-        // } catch(e) {
-        //     console.log(e)
-        // }
+    //     //     console.log('success: ')
+    //     //     console.log(dataTx)
+    //     // } catch(e) {
+    //     //     console.log(e)
+    //     // }
+    // }
+
+    const connect = async () => {
+        
     }
 
     const handleApprove = async () => {
@@ -123,6 +127,19 @@ const Navbar = ({isLoading,provider,web3Provider}) => {
         
     }
 
+    // const disconnect = useCallback(
+    //     async function () {
+    //         await web3Modal.clearCachedProvider()
+    //         if (provider?.disconnect && typeof provider.disconnect === 'function') {
+    //         await provider.disconnect()
+    //         }
+    //         dispatch({
+    //             type: 'RESET_WEB3_PROVIDER',
+    //         })
+    //     },
+    //     [provider]
+    // )
+
     return (
         <nav className="flex items-center justify-between flex-wrap p-4 bg-gradient-to-r from-gray-700 to-gray-400 border-b shadow">
             <div className="flex items-center flex-shrink-0 text-white mr-6">
@@ -170,7 +187,7 @@ const Navbar = ({isLoading,provider,web3Provider}) => {
                 </div>
                 <div>
                     <span className="inline-block text-sm px-4 py-2 leading-none text-white  mt-4 lg:mt-0">Wallet: {token} DTK</span>
-                    <a href="#" className="inline-block text-sm px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-gray-800 hover:bg-white mt-4 lg:mt-0" onClick={callTest}>Approve</a>
+                    <a href="#" className="inline-block text-sm px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-gray-800 hover:bg-white mt-4 lg:mt-0" onClick={connect}>connect</a>
                 </div>
             </div>
         
